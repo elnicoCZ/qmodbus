@@ -2,6 +2,7 @@
  * BatchProcessor.h - header file for BatchProcessor class
  *
  * Copyright (c) 2011-2014 Tobias Doerffel / Electronic Design Chemnitz
+ * Copyright (c) 2017      Petr Kubiznak
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -34,31 +35,49 @@
 
 namespace Ui
 {
-	class BatchProcessor;
+  class BatchProcessor;
 } ;
 
 class BatchProcessor : public QDialog
 {
-	Q_OBJECT
+  Q_OBJECT
 public:
-	BatchProcessor( QWidget *parent, modbus_t *modbus );
-	~BatchProcessor();
-
-
-private slots:
-	void start();
-	void stop();
-	void browseOutputFile();
-	void runBatch();
-
+  BatchProcessor( QWidget *parent, modbus_t *modbus );
+  ~BatchProcessor();
 
 private:
-	QString sendModbusRequest( int slaveID, int func, int addr );
+  typedef enum EFuncType_
+  {
+    neFuncTypeRead,
+    neFuncTypeWrite,
+    neFuncTypeInvalid
+  } EFuncType;
 
-	Ui::BatchProcessor *ui;
-	modbus_t *m_modbus;
-	QTimer m_timer;
-	QFile m_outputFile;
+  /** */
+  bool validateBatch();
+  /** */
+  bool processBatch(const QString & qBatch, bool bExecute);
+  /** */
+  void execRequest(int            iSlaveId,
+                   int            iFuncId,
+                   int            iAddr,
+                   int            iVal);
+  /** */
+  static EFuncType getFuncType(int iFuncId);
+
+private slots:
+  void start();
+  void stop();
+  void browseOutputFile();
+  void runBatch();
+
+private:
+  QString sendModbusRequest( int slaveID, int func, int addr );
+
+  Ui::BatchProcessor *ui;
+  modbus_t *m_modbus;
+  QTimer m_timer;
+  QFile m_outputFile;
 
 } ;
 

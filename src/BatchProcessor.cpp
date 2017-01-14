@@ -2,6 +2,7 @@
  * BatchProcessor.cpp - implementation of BatchProcessor class
  *
  * Copyright (c) 2011-2014 Tobias Doerffel
+ * Copyright (c) 2017      Petr Kubiznak
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -33,114 +34,188 @@
 #include "modbus-private.h"
 #include "ui_BatchProcessor.h"
 
+//******************************************************************************
 
-
-BatchProcessor::BatchProcessor( QWidget *parent, modbus_t *modbus ) :
-	QDialog( parent ),
-	ui( new Ui::BatchProcessor ),
-	m_modbus( modbus ),
-	m_timer()
+BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
+  QDialog( parent ),
+  ui( new Ui::BatchProcessor ),
+  m_modbus( modbus ),
+  m_timer()
 {
-	ui->setupUi(this);
+  ui->setupUi(this);
 
-	connect( &m_timer, SIGNAL( timeout() ),
-				this, SLOT( runBatch() ) );
+  connect(&m_timer, SIGNAL(timeout()), this, SLOT(runBatch()));
 }
 
-
-
+//******************************************************************************
 
 BatchProcessor::~BatchProcessor()
 {
-	delete ui;
+  delete ui;
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::start()
 {
-	m_outputFile.close();
+  if (!validateBatch())
+  {
+    QMessageBox::critical(this,
+                          tr("Invalid command"),
+                          tr("Batch command parsing failed"));
+    return;
+  }
 
-	m_outputFile.setFileName( ui->outputFileEdit->text() );
-	if( !m_outputFile.open( QFile::WriteOnly | QFile::Truncate ) )
-	{
-		QMessageBox::critical( this, tr( "Could not open file" ),
-								tr( "Could not open output file %1 for writing." ).arg( m_outputFile.fileName() ) );
-		return;
-	}
+  m_outputFile.close();
 
-	m_timer.start( ui->intervalSpinBox->value() * 1000 );
+  m_outputFile.setFileName( ui->outputFileEdit->text() );
+  if( !m_outputFile.open( QFile::WriteOnly | QFile::Truncate ) )
+  {
+    QMessageBox::critical(this,
+                          tr("Could not open file"),
+                          tr("Could not open output file %1 for writing.")
+                            .arg(m_outputFile.fileName()));
+    return;
+  }
 
-	ui->startButton->setEnabled( false );
-	ui->stopButton->setEnabled( true );
+  runBatch();
+
+  int iPeriod = ui->intervalSpinBox->value();
+  if (iPeriod > 0)
+  {
+    m_timer.start(iPeriod * 1000);
+
+    ui->startButton->setEnabled(false);
+    ui->stopButton->setEnabled(true);
+  }
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::stop()
 {
-	m_outputFile.close();
+  m_outputFile.close();
 
-	m_timer.stop();
+  m_timer.stop();
 
-	ui->startButton->setEnabled( true );
-	ui->stopButton->setEnabled( false );
+  ui->startButton->setEnabled(true);
+  ui->stopButton->setEnabled(false);
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::browseOutputFile()
 {
-	QString fileName = QFileDialog::getSaveFileName( this, tr( "Get output file" ),
-														QString(), tr("CSV files (*.csv)") );
-	if( !fileName.isEmpty() )
-	{
-		ui->outputFileEdit->setText( fileName );
-	}
+  QString fileName = QFileDialog::getSaveFileName(this,
+                                                  tr("Get output file"),
+                                                  QString(),
+                                                  tr("CSV files (*.csv)"));
+  if (!fileName.isEmpty())
+  {
+    ui->outputFileEdit->setText(fileName);
+  }
 }
 
-
-
-
-static inline QString embracedString( const QString & s )
-{
-	return s.section( '(', 1 ).section( ')', 0, 0 );
-}
-
-
-
-
-static inline int stringToHex( QString s )
-{
-	return s.replace( "0x", "" ).toInt( NULL, 16 );
-}
-
-
-
+//******************************************************************************
 
 void BatchProcessor::runBatch()
 {
-	const int func = stringToHex( embracedString( ui->functionCode->currentText() ) );
-
-	const QStringList slaves = ui->slaveEdit->text().split( ';' );
-
-	QTextStream out( &m_outputFile );
-
-	foreach( const QString &slaveCfg, slaves )
-	{
-		if( slaveCfg.contains( ':' ) )
-		{
-			const int slaveID = slaveCfg.split( ':' ).first().toInt();
-			const QStringList addresses = slaveCfg.split( ':' ).last().split( ',' );
-			foreach( const QString &addr, addresses )
-			{
-				out << QDateTime::currentDateTime().toString() << ", " << slaveID << ", " << addr.toInt() << ", " << sendModbusRequest( slaveID, func, addr.toInt() ) << endl;
-			}
-		}
-	}
+	processBatch(ui->slaveEdit->text(), true);
 }
 
+//******************************************************************************
 
+bool BatchProcessor::validateBatch()
+{
+	return processBatch(ui->slaveEdit->text(), false);
+}
+
+//******************************************************************************
+
+bool BatchProcessor::processBatch(const QString & qBatch, bool bExecute)
+{
+  bool              bParseSucc = true;
+  const QStringList qSlaves    = qBatch.split( ';' );
+
+  foreach( const QString & qSlave, qSlaves )
+  {
+    const QString     qCommand = qSlave.split('!').first();
+    const QStringList qDatas   = qSlave.split('!').last ().split(',');
+    bool              bSucc    = true;
+
+    const int         iSlaveId = qCommand.split('x').first().toInt(&bSucc);     bParseSucc &= bSucc;
+    const int         iFuncId  = qCommand.split('x').last ().toInt(&bSucc, 16); bParseSucc &= bSucc;
+
+    foreach( const QString & qData, qDatas )
+    {
+      const QStringList qAddrVal = qData.split(':');
+      const int iAddr = qAddrVal.first().toInt(&bSucc); bParseSucc &= bSucc;
+      const int iVal  = qAddrVal.last ().toInt(&bSucc); bParseSucc &= bSucc;
+
+      switch (getFuncType(iFuncId))
+      {
+        case neFuncTypeRead:
+          bParseSucc &= (qAddrVal.count() == 1);
+          break;
+
+        case neFuncTypeWrite:
+          bParseSucc &= (qAddrVal.count() == 2);
+          break;
+
+        default:
+          bParseSucc = false;
+          break;
+      }
+
+      if (bParseSucc && bExecute)
+      {
+        execRequest(iSlaveId, iFuncId, iAddr, iVal);
+      }
+    }
+  }
+
+  return bParseSucc;
+}
+
+//******************************************************************************
+
+BatchProcessor::EFuncType BatchProcessor::getFuncType(int iFuncId)
+{
+  switch (iFuncId)
+  {
+    case 0x01:
+    case 0x02:
+    case 0x03:
+    case 0x04:
+      return neFuncTypeRead;
+
+    case 0x0F:
+    case 0x10:
+      return neFuncTypeWrite;
+
+    default:
+      return neFuncTypeInvalid;
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::execRequest(int            iSlaveId,
+                                 int            iFuncId,
+                                 int            iAddr,
+                                 int            iVal)
+{
+  QTextStream out(&m_outputFile);
+
+  out << QDateTime::currentDateTime().toString() << ", "
+      << iSlaveId << ", "
+      << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
+      << iAddr << ", "
+      << sendModbusRequest(iSlaveId, iFuncId, iAddr)
+      << endl;
+}
+
+//******************************************************************************
 
 QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 {
@@ -270,7 +345,3 @@ QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
 
 	return "-1 (NO VALID DATA RECEIVED)";
 }
-
-
-
-
