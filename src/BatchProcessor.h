@@ -72,7 +72,10 @@ private slots:
   void runBatch();
 
 private:
-  QString sendModbusRequest( int slaveID, int func, int addr );
+  QString sendModbusRequest(int iSlaveID,
+                            int iFuncId,
+                            int iAddr,
+                            int iVal);
 
   Ui::BatchProcessor *ui;
   modbus_t *m_modbus;

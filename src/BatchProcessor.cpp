@@ -183,14 +183,16 @@ BatchProcessor::EFuncType BatchProcessor::getFuncType(int iFuncId)
 {
   switch (iFuncId)
   {
-    case 0x01:
-    case 0x02:
-    case 0x03:
-    case 0x04:
+    case MODBUS_FC_READ_COILS:
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+    case MODBUS_FC_READ_INPUT_REGISTERS:
       return neFuncTypeRead;
 
-    case 0x0F:
-    case 0x10:
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
       return neFuncTypeWrite;
 
     default:
@@ -211,137 +213,131 @@ void BatchProcessor::execRequest(int            iSlaveId,
       << iSlaveId << ", "
       << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
       << iAddr << ", "
-      << sendModbusRequest(iSlaveId, iFuncId, iAddr)
+      << sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal)
       << endl;
 }
 
 //******************************************************************************
 
-QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
+QString BatchProcessor::sendModbusRequest(int iSlaveID,
+                                          int iFuncId,
+                                          int iAddr,
+                                          int iVal)
 {
-	if( m_modbus == NULL )
-	{
-		return QString();
-	}
+  if (m_modbus == NULL)
+  {
+    return QString();
+  }
 
-	const int num = 1;
-	uint8_t dest[num*sizeof(uint16_t)];
-	uint16_t * dest16 = (uint16_t *) dest;
+  const int num = 1;
+  uint8_t dest[num*sizeof(uint16_t)];
+  uint16_t * dest16 = (uint16_t *) dest;
 
-	memset( dest, 0, sizeof( dest ) );
+  memset(dest, 0, sizeof(dest));
 
-	int ret = -1;
-	bool is16Bit = false;
+  int ret = -1;
+  bool is16Bit = false;
 
-	modbus_set_slave( m_modbus, slaveID );
+  modbus_set_slave(m_modbus, iSlaveID);
 
-	switch( func )
-	{
-		case MODBUS_FC_READ_COILS:
-			ret = modbus_read_bits( m_modbus, addr, num, dest );
-			break;
-		case MODBUS_FC_READ_DISCRETE_INPUTS:
-			ret = modbus_read_input_bits( m_modbus, addr, num, dest );
-			break;
-		case MODBUS_FC_READ_HOLDING_REGISTERS:
-			ret = modbus_read_registers( m_modbus, addr, num, dest16 );
-			is16Bit = true;
-			break;
-		case MODBUS_FC_READ_INPUT_REGISTERS:
-			ret = modbus_read_input_registers( m_modbus, addr, num, dest16 );
-			is16Bit = true;
-			break;
-/*		case MODBUS_FC_WRITE_SINGLE_COIL:
-			ret = modbus_write_bit( m_modbus, addr,
-					ui->regTable->item( 0, DataColumn )->
-						text().toInt(0, 0) ? 1 : 0 );
-			writeAccess = true;
-			num = 1;
-			break;
-		case MODBUS_FC_WRITE_SINGLE_REGISTER:
-			ret = modbus_write_register( m_modbus, addr,
-					ui->regTable->item( 0, DataColumn )->
-						text().toInt(0, 0) );
-			writeAccess = true;
-			num = 1;
-			break;
+  switch (iFuncId)
+  {
+    case MODBUS_FC_READ_COILS:
+      ret = modbus_read_bits(m_modbus, iAddr, num, dest);
+      break;
 
-		case MODBUS_FC_WRITE_MULTIPLE_COILS:
-		{
-			uint8_t * data = new uint8_t[num];
-			for( int i = 0; i < num; ++i )
-			{
-				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt(0, 0);
-			}
-			ret = modbus_write_bits( m_modbus, addr, num, data );
-			delete[] data;
-			writeAccess = true;
-			break;
-		}
-		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-		{
-			uint16_t * data = new uint16_t[num];
-			for( int i = 0; i < num; ++i )
-			{
-				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt(0, 0);
-			}
-			ret = modbus_write_registers( m_modbus, addr, num, data );
-			delete[] data;
-			writeAccess = true;
-			break;
-		}*/
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+      ret = modbus_read_input_bits(m_modbus, iAddr, num, dest);
+      break;
 
-		default:
-			QMessageBox::warning( this, tr( "Unimplemented function code" ), tr( "Function code %1 not implemented" ).arg( func ) );
-			break;
-	}
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+      ret = modbus_read_registers(m_modbus, iAddr, num, dest16);
+      is16Bit = true;
+      break;
 
-	if( ret == num )
-	{
-		bool b_hex = false;//is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
-		QString qs_num;
+    case MODBUS_FC_READ_INPUT_REGISTERS:
+      ret = modbus_read_input_registers(m_modbus, iAddr, num, dest16);
+      is16Bit = true;
+      break;
 
-		for( int i = 0; i < num; ++i )
-		{
-			int data = is16Bit ? dest16[i] : dest[i];
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+      ret = modbus_write_bit(m_modbus, iAddr, iVal);
+      break;
 
-			qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
-		}
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+      ret = modbus_write_register(m_modbus, iAddr, iVal);
+      break;
 
-		return qs_num;
-	}
-	else
-	{
-		if( ret < 0 )
-		{
-			if(
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+    {
+      uint8_t * au8Data = new uint8_t[num];
+      for (int i = 0; i < num; ++i)
+      {
+        au8Data[i] = iVal;
+      }
+      ret = modbus_write_bits(m_modbus, iAddr, num, au8Data);
+      delete[] au8Data;
+      break;
+    }
+
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+    {
+      uint16_t * au16Data = new uint16_t[num];
+      for (int i = 0; i < num; ++i)
+      {
+        au16Data[i] = iVal;
+      }
+      ret = modbus_write_registers(m_modbus, iAddr, num, au16Data);
+      delete[] au16Data;
+      break;
+    }
+
+    default:
+      // should not happen, as we validate the batch prior to execution
+      QMessageBox::warning(this, tr("Unimplemented function code"),
+                           tr("Function code %1 not implemented").arg(iFuncId));
+      break;
+  }
+
+  if (ret == num)
+  {
+    bool b_hex = false;//is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
+    QString qs_num;
+
+    for( int i = 0; i < num; ++i )
+    {
+      int data = is16Bit ? dest16[i] : dest[i];
+
+      qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
+    }
+
+    return qs_num;
+  }
+  else
+  {
+    if (ret < 0)
+    {
+      if (
 #ifdef WIN32
-					errno == WSAETIMEDOUT ||
+          errno == WSAETIMEDOUT ||
 #endif
-					errno == EIO
-																	)
-			{
-				QMessageBox::critical( this, tr( "I/O error" ),
-					tr( "I/O error: did not receive any data from slave." ) );
-			}
-			else
-			{
-				QMessageBox::critical( this, tr( "Protocol error" ),
-					tr( "Slave threw exception \"%1\" or "
-						"function not implemented." ).
-								arg( modbus_strerror( errno ) ) );
-			}
-		}
-		else
-		{
-			QMessageBox::critical( this, tr( "Protocol error" ),
-				tr( "Number of registers returned does not "
-					"match number of registers "
-							"requested!" ) );
-		}
-	}
+          errno == EIO
+                                  )
+      {
+        return tr("-1 (I/O error: did not receive any data from slave.)");
+      }
+      else
+      {
+        return tr("-1 (Slave threw exception \"%1\" or function not implemented.)")
+                  .arg(modbus_strerror(errno));
+      }
+    }
+    else
+    {
+      return tr("-1 (Number of registers returned does not match "
+                "number of registers requested!)");
+    }
+  }
 
-	return "-1 (NO VALID DATA RECEIVED)";
+  return "-1 (NO VALID DATA RECEIVED)";
 }
