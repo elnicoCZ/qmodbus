@@ -2,6 +2,7 @@
  * BatchProcessor.cpp - implementation of BatchProcessor class
  *
  * Copyright (c) 2011-2014 Tobias Doerffel
+ * Copyright (c) 2017      Petr Kubiznak
  *
  * This file is part of QModBus - http://qmodbus.sourceforge.net
  *
@@ -33,244 +34,344 @@
 #include "modbus-private.h"
 #include "ui_BatchProcessor.h"
 
+//******************************************************************************
 
-
-BatchProcessor::BatchProcessor( QWidget *parent, modbus_t *modbus ) :
-	QDialog( parent ),
-	ui( new Ui::BatchProcessor ),
-	m_modbus( modbus ),
-	m_timer()
+BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
+  QDialog( parent ),
+  ui( new Ui::BatchProcessor ),
+  m_modbus( modbus ),
+  m_timer()
 {
-	ui->setupUi(this);
+  ui->setupUi(this);
 
-	connect( &m_timer, SIGNAL( timeout() ),
-				this, SLOT( runBatch() ) );
+  connect(&m_timer, SIGNAL(timeout()), this, SLOT(runBatch()));
 }
 
-
-
+//******************************************************************************
 
 BatchProcessor::~BatchProcessor()
 {
-	delete ui;
+  stop();
+  delete ui;
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::start()
 {
-	m_outputFile.close();
+  if (!validateBatch())
+  {
+    QMessageBox::critical(this,
+                          tr("Invalid command"),
+                          tr("Batch command parsing failed"));
+    return;
+  }
 
-	m_outputFile.setFileName( ui->outputFileEdit->text() );
-	if( !m_outputFile.open( QFile::WriteOnly | QFile::Truncate ) )
-	{
-		QMessageBox::critical( this, tr( "Could not open file" ),
-								tr( "Could not open output file %1 for writing." ).arg( m_outputFile.fileName() ) );
-		return;
-	}
+  logClose();
+  logOpen(ui->outputFileEdit->text());
 
-	m_timer.start( ui->intervalSpinBox->value() * 1000 );
+  runBatch();
 
-	ui->startButton->setEnabled( false );
-	ui->stopButton->setEnabled( true );
+  int iPeriod = ui->intervalSpinBox->value();
+  if (iPeriod > 0)
+  {
+    m_timer.start(iPeriod * 1000);
+
+    ui->startButton->setEnabled(false);
+    ui->stopButton->setEnabled(true);
+  }
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::stop()
 {
-	m_outputFile.close();
+  logClose();
 
-	m_timer.stop();
+  m_timer.stop();
 
-	ui->startButton->setEnabled( true );
-	ui->stopButton->setEnabled( false );
+  ui->startButton->setEnabled(true);
+  ui->stopButton->setEnabled(false);
 }
 
-
+//******************************************************************************
 
 void BatchProcessor::browseOutputFile()
 {
-	QString fileName = QFileDialog::getSaveFileName( this, tr( "Get output file" ),
-														QString(), tr("CSV files (*.csv)") );
-	if( !fileName.isEmpty() )
-	{
-		ui->outputFileEdit->setText( fileName );
-	}
+  QString fileName = QFileDialog::getSaveFileName(this,
+                                                  tr("Get output file"),
+                                                  QString(),
+                                                  tr("CSV files (*.csv)"));
+  if (!fileName.isEmpty())
+  {
+    ui->outputFileEdit->setText(fileName);
+  }
 }
 
-
-
-
-static inline QString embracedString( const QString & s )
-{
-	return s.section( '(', 1 ).section( ')', 0, 0 );
-}
-
-
-
-
-static inline int stringToHex( QString s )
-{
-	return s.replace( "0x", "" ).toInt( NULL, 16 );
-}
-
-
-
+//******************************************************************************
 
 void BatchProcessor::runBatch()
 {
-	const int func = stringToHex( embracedString( ui->functionCode->currentText() ) );
-
-	const QStringList slaves = ui->slaveEdit->text().split( ';' );
-
-	QTextStream out( &m_outputFile );
-
-	foreach( const QString &slaveCfg, slaves )
-	{
-		if( slaveCfg.contains( ':' ) )
-		{
-			const int slaveID = slaveCfg.split( ':' ).first().toInt();
-			const QStringList addresses = slaveCfg.split( ':' ).last().split( ',' );
-			foreach( const QString &addr, addresses )
-			{
-				out << QDateTime::currentDateTime().toTime_t() << slaveID << ", " << addr.toInt() << ", " << sendModbusRequest( slaveID, func, addr.toInt() ) << endl;
-			}
-		}
-	}
+	processBatch(ui->slaveEdit->text(), true);
 }
 
+//******************************************************************************
 
-
-QString BatchProcessor::sendModbusRequest( int slaveID, int func, int addr )
+bool BatchProcessor::validateBatch()
 {
-	if( m_modbus == NULL )
-	{
-		return QString();
-	}
-
-	const int num = 1;
-	uint8_t dest[num*sizeof(uint16_t)];
-	uint16_t * dest16 = (uint16_t *) dest;
-
-	memset( dest, 0, sizeof( dest ) );
-
-	int ret = -1;
-	bool is16Bit = false;
-
-	modbus_set_slave( m_modbus, slaveID );
-
-	switch( func )
-	{
-		case MODBUS_FC_READ_COILS:
-			ret = modbus_read_bits( m_modbus, addr, num, dest );
-			break;
-		case MODBUS_FC_READ_DISCRETE_INPUTS:
-			ret = modbus_read_input_bits( m_modbus, addr, num, dest );
-			break;
-		case MODBUS_FC_READ_HOLDING_REGISTERS:
-			ret = modbus_read_registers( m_modbus, addr, num, dest16 );
-			is16Bit = true;
-			break;
-		case MODBUS_FC_READ_INPUT_REGISTERS:
-			ret = modbus_read_input_registers( m_modbus, addr, num, dest16 );
-			is16Bit = true;
-			break;
-/*		case MODBUS_FC_WRITE_SINGLE_COIL:
-			ret = modbus_write_bit( m_modbus, addr,
-					ui->regTable->item( 0, DataColumn )->
-						text().toInt(0, 0) ? 1 : 0 );
-			writeAccess = true;
-			num = 1;
-			break;
-		case MODBUS_FC_WRITE_SINGLE_REGISTER:
-			ret = modbus_write_register( m_modbus, addr,
-					ui->regTable->item( 0, DataColumn )->
-						text().toInt(0, 0) );
-			writeAccess = true;
-			num = 1;
-			break;
-
-		case MODBUS_FC_WRITE_MULTIPLE_COILS:
-		{
-			uint8_t * data = new uint8_t[num];
-			for( int i = 0; i < num; ++i )
-			{
-				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt(0, 0);
-			}
-			ret = modbus_write_bits( m_modbus, addr, num, data );
-			delete[] data;
-			writeAccess = true;
-			break;
-		}
-		case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-		{
-			uint16_t * data = new uint16_t[num];
-			for( int i = 0; i < num; ++i )
-			{
-				data[i] = ui->regTable->item( i, DataColumn )->
-								text().toInt(0, 0);
-			}
-			ret = modbus_write_registers( m_modbus, addr, num, data );
-			delete[] data;
-			writeAccess = true;
-			break;
-		}*/
-
-		default:
-			QMessageBox::warning( this, tr( "Unimplemented function code" ), tr( "Function code %1 not implemented" ).arg( func ) );
-			break;
-	}
-
-	if( ret == num )
-	{
-		bool b_hex = false;//is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
-		QString qs_num;
-
-		for( int i = 0; i < num; ++i )
-		{
-			int data = is16Bit ? dest16[i] : dest[i];
-
-			qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
-		}
-
-		return qs_num;
-	}
-	else
-	{
-		if( ret < 0 )
-		{
-			if(
-#ifdef WIN32
-					errno == WSAETIMEDOUT ||
-#endif
-					errno == EIO
-																	)
-			{
-				QMessageBox::critical( this, tr( "I/O error" ),
-					tr( "I/O error: did not receive any data from slave." ) );
-			}
-			else
-			{
-				QMessageBox::critical( this, tr( "Protocol error" ),
-					tr( "Slave threw exception \"%1\" or "
-						"function not implemented." ).
-								arg( modbus_strerror( errno ) ) );
-			}
-		}
-		else
-		{
-			QMessageBox::critical( this, tr( "Protocol error" ),
-				tr( "Number of registers returned does not "
-					"match number of registers "
-							"requested!" ) );
-		}
-	}
-
-	return "-1 (NO VALID DATA RECEIVED)";
+	return processBatch(ui->slaveEdit->text(), false);
 }
 
+//******************************************************************************
 
+bool BatchProcessor::processBatch(const QString & qBatch, bool bExecute)
+{
+  bool              bParseSucc = true;
+  const QStringList qSlaves    = qBatch.split( ';' );
 
+  foreach( const QString & qSlave, qSlaves )
+  {
+    const QString     qCommand = qSlave.split('!').first();
+    const QStringList qDatas   = qSlave.split('!').last ().split(',');
+    bool              bSucc    = true;
 
+    const int         iSlaveId = qCommand.split('x').first().toInt(&bSucc);     bParseSucc &= bSucc;
+    const int         iFuncId  = qCommand.split('x').last ().toInt(&bSucc, 16); bParseSucc &= bSucc;
+
+    foreach( const QString & qData, qDatas )
+    {
+      const QStringList qAddrVal = qData.split(':');
+      const int iAddr = qAddrVal.first().toInt(&bSucc); bParseSucc &= bSucc;
+      const int iVal  = qAddrVal.last ().toInt(&bSucc); bParseSucc &= bSucc;
+
+      switch (getFuncType(iFuncId))
+      {
+        case neFuncTypeRead:
+          bParseSucc &= (qAddrVal.count() == 1);
+          break;
+
+        case neFuncTypeWrite:
+          bParseSucc &= (qAddrVal.count() == 2);
+          break;
+
+        default:
+          bParseSucc = false;
+          break;
+      }
+
+      if (bParseSucc && bExecute)
+      {
+        execRequest(iSlaveId, iFuncId, iAddr, iVal);
+      }
+    }
+  }
+
+  return bParseSucc;
+}
+
+//******************************************************************************
+
+BatchProcessor::EFuncType BatchProcessor::getFuncType(int iFuncId)
+{
+  switch (iFuncId)
+  {
+    case MODBUS_FC_READ_COILS:
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+    case MODBUS_FC_READ_INPUT_REGISTERS:
+      return neFuncTypeRead;
+
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+      return neFuncTypeWrite;
+
+    default:
+      return neFuncTypeInvalid;
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::execRequest(int            iSlaveId,
+                                 int            iFuncId,
+                                 int            iAddr,
+                                 int            iVal)
+{
+  QString qStr;
+  QTextStream qStrStream(&qStr);
+
+  qStrStream << QDateTime::currentDateTime().toString() << ", "
+             << iSlaveId << ", "
+             << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
+             << iAddr << ", "
+             << sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal);
+
+  logWrite(qStr);
+}
+
+//******************************************************************************
+
+QString BatchProcessor::sendModbusRequest(int iSlaveID,
+                                          int iFuncId,
+                                          int iAddr,
+                                          int iVal)
+{
+  if (m_modbus == NULL)
+  {
+    return QString();
+  }
+
+  const int num = 1;
+  uint8_t dest[num*sizeof(uint16_t)];
+  uint16_t * dest16 = (uint16_t *) dest;
+
+  memset(dest, 0, sizeof(dest));
+
+  int ret = -1;
+  bool is16Bit = false;
+
+  modbus_set_slave(m_modbus, iSlaveID);
+
+  switch (iFuncId)
+  {
+    case MODBUS_FC_READ_COILS:
+      ret = modbus_read_bits(m_modbus, iAddr, num, dest);
+      break;
+
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+      ret = modbus_read_input_bits(m_modbus, iAddr, num, dest);
+      break;
+
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+      ret = modbus_read_registers(m_modbus, iAddr, num, dest16);
+      is16Bit = true;
+      break;
+
+    case MODBUS_FC_READ_INPUT_REGISTERS:
+      ret = modbus_read_input_registers(m_modbus, iAddr, num, dest16);
+      is16Bit = true;
+      break;
+
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+      ret = modbus_write_bit(m_modbus, iAddr, iVal);
+      break;
+
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+      ret = modbus_write_register(m_modbus, iAddr, iVal);
+      break;
+
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+    {
+      uint8_t * au8Data = new uint8_t[num];
+      for (int i = 0; i < num; ++i)
+      {
+        au8Data[i] = iVal;
+      }
+      ret = modbus_write_bits(m_modbus, iAddr, num, au8Data);
+      delete[] au8Data;
+      break;
+    }
+
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+    {
+      uint16_t * au16Data = new uint16_t[num];
+      for (int i = 0; i < num; ++i)
+      {
+        au16Data[i] = iVal;
+      }
+      ret = modbus_write_registers(m_modbus, iAddr, num, au16Data);
+      delete[] au16Data;
+      break;
+    }
+
+    default:
+      // should not happen, as we validate the batch prior to execution
+      QMessageBox::warning(this, tr("Unimplemented function code"),
+                           tr("Function code %1 not implemented").arg(iFuncId));
+      break;
+  }
+
+  if (ret == num)
+  {
+    bool b_hex = false;//is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
+    QString qs_num;
+
+    for( int i = 0; i < num; ++i )
+    {
+      int data = is16Bit ? dest16[i] : dest[i];
+
+      qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
+    }
+
+    return qs_num;
+  }
+  else
+  {
+    if (ret < 0)
+    {
+      if (
+#ifdef WIN32
+          errno == WSAETIMEDOUT ||
+#endif
+          errno == EIO
+                                  )
+      {
+        return tr("-1 (I/O error: did not receive any data from slave.)");
+      }
+      else
+      {
+        return tr("-1 (Slave threw exception \"%1\" or function not implemented.)")
+                  .arg(modbus_strerror(errno));
+      }
+    }
+    else
+    {
+      return tr("-1 (Number of registers returned does not match "
+                "number of registers requested!)");
+    }
+  }
+
+  return "-1 (NO VALID DATA RECEIVED)";
+}
+
+//******************************************************************************
+
+void BatchProcessor::logOpen(const QString & sFilename)
+{
+  ui->txtLog->clear();
+
+  if (sFilename.isEmpty()) return;
+
+  m_outputFile.setFileName(sFilename);
+  if(!m_outputFile.open(QFile::WriteOnly | QFile::Truncate))
+  {
+    QMessageBox::critical(this,
+                          tr("Could not open file"),
+                          tr("Could not open output file %1 for writing.")
+                            .arg(m_outputFile.fileName()));
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::logWrite(const QString & qStr)
+{
+  ui->txtLog->appendPlainText(qStr);
+
+  if (m_outputFile.isOpen())
+  {
+    QTextStream qFileStream(&m_outputFile);
+    qFileStream << qStr << endl;
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::logClose(void)
+{
+  m_outputFile.close();
+}
+
+//******************************************************************************

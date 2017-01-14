@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>515</width>
-    <height>173</height>
+    <width>547</width>
+    <height>377</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,11 +15,11 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout">
+    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0">
      <item row="1" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Interval (in seconds)</string>
+        <string>Period (in seconds)</string>
        </property>
        <property name="buddy">
         <cstring>intervalSpinBox</cstring>
@@ -28,8 +28,11 @@
      </item>
      <item row="1" column="1">
       <widget class="QSpinBox" name="intervalSpinBox">
+       <property name="toolTip">
+        <string>Use 0 for single-shot execution.</string>
+       </property>
        <property name="minimum">
-        <number>1</number>
+        <number>0</number>
        </property>
       </widget>
      </item>
@@ -46,61 +49,7 @@
        </property>
       </spacer>
      </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Function code</string>
-       </property>
-       <property name="buddy">
-        <cstring>functionCode</cstring>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1" colspan="4">
-      <widget class="QComboBox" name="functionCode">
-       <item>
-        <property name="text">
-         <string>Read Coils (0x01)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Read Discrete Inputs (0x02)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Read Holding Registers (0x03)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Read Input Registers (0x04)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Write Single Coil (0x05)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Write Single Register (0x06)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Write Multiple Coils (0x0f)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Write Multiple Registers (0x10)</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="4" column="0">
+     <item row="3" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Output file</string>
@@ -110,10 +59,10 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1" colspan="3">
+     <item row="3" column="1" colspan="3">
       <widget class="QLineEdit" name="outputFileEdit"/>
      </item>
-     <item row="4" column="4">
+     <item row="3" column="4">
       <widget class="QToolButton" name="openOutputFileButton">
        <property name="text">
         <string>...</string>
@@ -189,12 +138,28 @@
      </item>
     </layout>
    </item>
+   <item>
+    <widget class="QLabel" name="lblLog">
+     <property name="text">
+      <string>Output Log:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPlainTextEdit" name="txtLog">
+     <property name="lineWrapMode">
+      <enum>QPlainTextEdit::NoWrap</enum>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>slaveEdit</tabstop>
   <tabstop>intervalSpinBox</tabstop>
-  <tabstop>functionCode</tabstop>
   <tabstop>outputFileEdit</tabstop>
   <tabstop>openOutputFileButton</tabstop>
   <tabstop>startButton</tabstop>
