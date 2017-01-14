@@ -51,6 +51,7 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
 
 BatchProcessor::~BatchProcessor()
 {
+  stop();
   delete ui;
 }
 
@@ -66,17 +67,8 @@ void BatchProcessor::start()
     return;
   }
 
-  m_outputFile.close();
-
-  m_outputFile.setFileName( ui->outputFileEdit->text() );
-  if( !m_outputFile.open( QFile::WriteOnly | QFile::Truncate ) )
-  {
-    QMessageBox::critical(this,
-                          tr("Could not open file"),
-                          tr("Could not open output file %1 for writing.")
-                            .arg(m_outputFile.fileName()));
-    return;
-  }
+  logClose();
+  logOpen(ui->outputFileEdit->text());
 
   runBatch();
 
@@ -94,7 +86,7 @@ void BatchProcessor::start()
 
 void BatchProcessor::stop()
 {
-  m_outputFile.close();
+  logClose();
 
   m_timer.stop();
 
@@ -207,14 +199,16 @@ void BatchProcessor::execRequest(int            iSlaveId,
                                  int            iAddr,
                                  int            iVal)
 {
-  QTextStream out(&m_outputFile);
+  QString qStr;
+  QTextStream qStrStream(&qStr);
 
-  out << QDateTime::currentDateTime().toString() << ", "
-      << iSlaveId << ", "
-      << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
-      << iAddr << ", "
-      << sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal)
-      << endl;
+  qStrStream << QDateTime::currentDateTime().toString() << ", "
+             << iSlaveId << ", "
+             << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
+             << iAddr << ", "
+             << sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal);
+
+  logWrite(qStr);
 }
 
 //******************************************************************************
@@ -341,3 +335,43 @@ QString BatchProcessor::sendModbusRequest(int iSlaveID,
 
   return "-1 (NO VALID DATA RECEIVED)";
 }
+
+//******************************************************************************
+
+void BatchProcessor::logOpen(const QString & sFilename)
+{
+  ui->txtLog->clear();
+
+  if (sFilename.isEmpty()) return;
+
+  m_outputFile.setFileName(sFilename);
+  if(!m_outputFile.open(QFile::WriteOnly | QFile::Truncate))
+  {
+    QMessageBox::critical(this,
+                          tr("Could not open file"),
+                          tr("Could not open output file %1 for writing.")
+                            .arg(m_outputFile.fileName()));
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::logWrite(const QString & qStr)
+{
+  ui->txtLog->appendPlainText(qStr);
+
+  if (m_outputFile.isOpen())
+  {
+    QTextStream qFileStream(&m_outputFile);
+    qFileStream << qStr << endl;
+  }
+}
+
+//******************************************************************************
+
+void BatchProcessor::logClose(void)
+{
+  m_outputFile.close();
+}
+
+//******************************************************************************

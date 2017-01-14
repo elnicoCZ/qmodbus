@@ -65,6 +65,13 @@ private:
   /** */
   static EFuncType getFuncType(int iFuncId);
 
+  /** */
+  void logOpen(const QString & sFilename);
+  /** */
+  void logWrite(const QString & qStr);
+  /** */
+  void logClose(void);
+
 private slots:
   void start();
   void stop();
