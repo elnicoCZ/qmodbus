@@ -212,6 +212,11 @@ static int send_msg(modbus_t *ctx, uint8_t *msg, int msg_length)
                 errno = saved_errno;
             }
         }
+        /* -- BEGIN QMODBUS MODIFICATION -- */
+        if (ctx->monitor_raw_data) {
+            ctx->monitor_raw_data(ctx, msg, rc, 1, 0);
+        }
+        /* -- END QMODBUS MODIFICATION -- */
     } while ((ctx->error_recovery & MODBUS_ERROR_RECOVERY_LINK) &&
              rc == -1);
 
@@ -433,11 +438,11 @@ int _modbus_receive_msg(modbus_t *ctx, uint8_t *msg, msg_type_t msg_type)
             return -1;
         }
 
-		/* -- BEGIN QMODBUS MODIFICATION -- */
+        /* -- BEGIN QMODBUS MODIFICATION -- */
         if (ctx->monitor_raw_data) {
-		    ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0 );
+            ctx->monitor_raw_data(ctx, msg + msg_length, rc, ( step == _STEP_DATA && length_to_read-rc == 0 ) ? 1 : 0, 1);
         }
-                /* -- END QMODBUS MODIFICATION -- */
+        /* -- END QMODBUS MODIFICATION -- */
 
         /* Display the hex code of each character received */
         if (ctx->debug) {
@@ -1983,20 +1988,20 @@ size_t strlcpy(char *dest, const char *src, size_t dest_size)
 
 
 void modbus_register_monitor_add_item_fnc(modbus_t *ctx,
-                                         modbus_monitor_add_item_fnc_t cb) 
+                                         modbus_monitor_add_item_fnc_t cb)
 {
-    if (ctx) {	    
-        ctx->monitor_add_item = cb; 
+    if (ctx) {
+        ctx->monitor_add_item = cb;
     }
 }
 
 void modbus_register_monitor_raw_data_fnc(modbus_t *ctx,
-                                         modbus_monitor_raw_data_fnc_t cb) 
+                                         modbus_monitor_raw_data_fnc_t cb)
 {
     if (ctx) {
         ctx->monitor_raw_data = cb;
-    } 
-} 
+    }
+}
 
 void modbus_poll(modbus_t* ctx)
 {

@@ -288,7 +288,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>Raw data received:</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Raw data transmitted/&lt;span style=&quot; color:#0000ff;&quot;&gt;received&lt;/span&gt;:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -322,6 +322,9 @@
          </property>
          <property name="undoRedoEnabled">
           <bool>false</bool>
+         </property>
+         <property name="lineWrapMode">
+          <enum>QPlainTextEdit::NoWrap</enum>
          </property>
          <property name="readOnly">
           <bool>true</bool>

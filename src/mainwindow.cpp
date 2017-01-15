@@ -161,23 +161,28 @@ void MainWindow::busMonitorAddItem( bool isRequest,
 }
 
 
-void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen, bool addNewline )
+void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen,
+                                    bool addNewline, uint8_t rx )
 {
-	if( dataLen > 0 )
-	{
-		QString dump = ui->rawData->toPlainText();
-		for( int i = 0; i < dataLen; ++i )
-		{
-			dump += QString().sprintf( "%.2x ", data[i] );
-		}
-		if( addNewline )
-		{
-			dump += "\n";
-		}
-		ui->rawData->setPlainText( dump );
-		ui->rawData->verticalScrollBar()->setValue( 100000 );
-		ui->rawData->setLineWrapMode( QPlainTextEdit::NoWrap );
-	}
+  if (dataLen > 0)
+  {
+    QString sMsgData;
+
+    for (int i=0; i<dataLen; ++i)
+    {
+      sMsgData += QString().sprintf("%02x ", data[i]);
+    }
+    if (addNewline)
+    {
+      sMsgData += "<br>";
+    }
+
+    QString sColor = rx ? "#0000ff" : "#000000";
+
+    ui->rawData->textCursor().insertHtml(
+      "<tt style=\"color:" + sColor + "\">" + sMsgData + "</tt>"
+    );
+  }
 }
 
 // static
@@ -188,10 +193,14 @@ void MainWindow::stBusMonitorAddItem( modbus_t * modbus, uint8_t isRequest, uint
 }
 
 // static
-void MainWindow::stBusMonitorRawData( modbus_t * modbus, uint8_t * data, uint8_t dataLen, uint8_t addNewline )
+void MainWindow::stBusMonitorRawData( modbus_t  * modbus,
+                                      uint8_t   * data,
+                                      uint8_t     dataLen,
+                                      uint8_t     addNewline,
+                                      uint8_t     rx )
 {
     Q_UNUSED(modbus);
-    globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0 );
+    globalMainWin->busMonitorRawData( data, dataLen, addNewline != 0, rx );
 }
 
 static QString descriptiveDataTypeName( int funcCode )
