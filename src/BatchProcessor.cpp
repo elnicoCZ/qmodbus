@@ -202,7 +202,7 @@ void BatchProcessor::execRequest(int            iSlaveId,
   QString qStr;
   QTextStream qStrStream(&qStr);
 
-  qStrStream << QDateTime::currentDateTime().toString() << ", "
+  qStrStream << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") << ", "
              << iSlaveId << ", "
              << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
              << iAddr << ", "
