@@ -131,8 +131,8 @@ bool BatchProcessor::processBatch(const QString & qBatch, bool bExecute)
 
   foreach( const QString & qSlave, qSlaves )
   {
-    const QString     qCommand = qSlave.split('!').first();
-    const QStringList qDatas   = qSlave.split('!').last ().split(',');
+    const QString     qCommand = qSlave.split(':').first();
+    const QStringList qDatas   = qSlave.split(':').last ().split(',');
     bool              bSucc    = true;
 
     const int         iSlaveId = qCommand.split('x').first().toInt(&bSucc);     bParseSucc &= bSucc;
@@ -140,7 +140,7 @@ bool BatchProcessor::processBatch(const QString & qBatch, bool bExecute)
 
     foreach( const QString & qData, qDatas )
     {
-      const QStringList qAddrVal = qData.split(':');
+      const QStringList qAddrVal = qData.split('=');
       const int iAddr = qAddrVal.first().toInt(&bSucc); bParseSucc &= bSucc;
       const int iVal  = qAddrVal.last ().toInt(&bSucc); bParseSucc &= bSucc;
 

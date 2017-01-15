@@ -182,6 +182,8 @@ void MainWindow::busMonitorRawData( uint8_t * data, uint8_t dataLen,
     ui->rawData->textCursor().insertHtml(
       "<tt style=\"color:" + sColor + "\">" + sMsgData + "</tt>"
     );
+
+    ui->rawData->verticalScrollBar()->setValue(100000);
   }
 }
 
