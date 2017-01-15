@@ -83,9 +83,10 @@
        <item>
         <widget class="QLabel" name="aboutTextLabel">
          <property name="text">
-          <string>This is QModBus %1.
+          <string>This is QModBus %1, Elnico fork.
 
-Copyright © 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH</string>
+Copyright © 2009-2011 Tobias Doerffel, EDC Electronic Design Chemnitz GmbH
+Copyright © 2016-2017 Petr Kubiznak, Elnico s.r.o.</string>
          </property>
          <property name="textFormat">
           <enum>Qt::PlainText</enum>
