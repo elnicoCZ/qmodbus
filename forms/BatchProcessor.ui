@@ -74,19 +74,38 @@
       </widget>
      </item>
      <item row="0" column="1" colspan="3">
-      <widget class="QLineEdit" name="slaveEdit">
+      <widget class="QPlainTextEdit" name="batchEdit">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Batch is a sequence of commands separated by the semicolon: &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;cmd&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;;&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;cmd&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;1&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;;...;&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;cmd&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;m&lt;/span&gt;&lt;/p&gt;&lt;p&gt;One command &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;cmd&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i&lt;/span&gt; has the following syntax: &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;slave&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;x&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;func&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;data&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i0&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;data&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i1&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;,...,&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;data&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;in&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;slave&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i&lt;/span&gt;: Slave ID in &lt;span style=&quot; text-decoration: underline;&quot;&gt;dec&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;func&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;i&lt;/span&gt;: Function code in &lt;span style=&quot; text-decoration: underline;&quot;&gt;hex&lt;/span&gt; (01=Read Coils, 02=Read Discrete Inputs, 03=Read Holding Registers, 04=Read Input Registers, 05=Write Single Coil, 06=Write Single Register, 0F=Write Multiple Coils, 10=Write Multiple Registers).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;data&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000; vertical-align:sub;&quot;&gt;ij&lt;/span&gt;: Either &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;addr&lt;/span&gt; (for all &lt;span style=&quot; font-style:italic;&quot;&gt;Read&lt;/span&gt; commands) or &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;addr&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;=&lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;val&lt;/span&gt; (for all &lt;span style=&quot; font-style:italic;&quot;&gt;Write&lt;/span&gt; commands), where &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;addr&lt;/span&gt; is the coil/input/register address in &lt;span style=&quot; text-decoration: underline;&quot;&gt;dec&lt;/span&gt; and &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;val&lt;/span&gt; is the new value in &lt;span style=&quot; text-decoration: underline;&quot;&gt;dec&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;For example, &lt;span style=&quot; font-weight:600;&quot;&gt;13x10:7=2,12=1;62x02:8,9,10,11,12&lt;/span&gt; first writes 2 to the holding register 7 and 1 to the holding register 12 of the slave 13, then it reads discrete inputs 8-12 from slave 62.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="lineWrapMode">
+        <enum>QPlainTextEdit::NoWrap</enum>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
-      <widget class="QLabel" name="label_6">
+      <widget class="QLabel" name="batchLbl">
        <property name="text">
         <string>Batch</string>
        </property>
        <property name="buddy">
-        <cstring>slaveEdit</cstring>
+        <cstring>batchEdit</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QToolButton" name="batchLoadBtn">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::MenuButtonPopup</enum>
        </property>
       </widget>
      </item>
@@ -166,7 +185,7 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>slaveEdit</tabstop>
+  <tabstop>batchEdit</tabstop>
   <tabstop>intervalSpinBox</tabstop>
   <tabstop>outputFileEdit</tabstop>
   <tabstop>openOutputFileButton</tabstop>
@@ -183,8 +202,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>402</x>
-     <y>160</y>
+     <x>541</x>
+     <y>218</y>
     </hint>
     <hint type="destinationlabel">
      <x>208</x>
@@ -199,8 +218,8 @@
    <slot>browseOutputFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>492</x>
-     <y>113</y>
+     <x>541</x>
+     <y>188</y>
     </hint>
     <hint type="destinationlabel">
      <x>505</x>
@@ -215,8 +234,8 @@
    <slot>start()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>138</x>
-     <y>147</y>
+     <x>239</x>
+     <y>218</y>
     </hint>
     <hint type="destinationlabel">
      <x>67</x>
@@ -231,12 +250,28 @@
    <slot>stop()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>152</y>
+     <x>299</x>
+     <y>218</y>
     </hint>
     <hint type="destinationlabel">
      <x>267</x>
      <y>145</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>batchLoadBtn</sender>
+   <signal>clicked()</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>browseBatchFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>528</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>128</x>
+     <y>54</y>
     </hint>
    </hints>
   </connection>
@@ -245,5 +280,6 @@
   <slot>start()</slot>
   <slot>stop()</slot>
   <slot>browseOutputFile()</slot>
+  <slot>browseBatchFile()</slot>
  </slots>
 </ui>

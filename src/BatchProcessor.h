@@ -26,12 +26,13 @@
 #ifndef _BATCH_PROCESSOR_H
 #define _BATCH_PROCESSOR_H
 
+#include <QDir>
 #include <QFile>
 #include <QTimer>
 #include <QDialog>
+#include <QMenu>
 
 #include "modbus.h"
-
 
 namespace Ui
 {
@@ -72,10 +73,17 @@ private:
   /** */
   void logClose(void);
 
+  /** */
+  bool loadBatchFile(const QString & sFilename);
+  /** */
+  void updateBatchFileMenu(const QString & sPath = "");
+
 private slots:
   void start();
   void stop();
   void browseOutputFile();
+  void browseBatchFile();
+  void batchMenuTriggered(QAction * qAction);
   void runBatch();
 
 private:
@@ -87,7 +95,9 @@ private:
   Ui::BatchProcessor *ui;
   modbus_t *m_modbus;
   QTimer m_timer;
-  QFile m_outputFile;
+  QDir  m_oInputDir;
+  QMenu m_oInputMenu;
+  QFile m_oOutputFile;
 
 } ;
 

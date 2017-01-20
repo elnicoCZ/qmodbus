@@ -40,11 +40,18 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
   QDialog( parent ),
   ui( new Ui::BatchProcessor ),
   m_modbus( modbus ),
-  m_timer()
+  m_timer(),
+  m_oInputDir(),
+  m_oInputMenu(this)
 {
   ui->setupUi(this);
 
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(runBatch()));
+
+  ui->batchLoadBtn->setMenu(&m_oInputMenu);
+  updateBatchFileMenu();
+  connect(&m_oInputMenu, SIGNAL(triggered(QAction*)),
+          this, SLOT(batchMenuTriggered(QAction*)));
 }
 
 //******************************************************************************
@@ -110,16 +117,49 @@ void BatchProcessor::browseOutputFile()
 
 //******************************************************************************
 
+void BatchProcessor::browseBatchFile()
+{
+  QString sFilename = QFileDialog::getOpenFileName(this,
+                                                   tr("Get batch file"),
+                                                   QString(),
+                                                   tr("QModBus Batch (*.qmb)"));
+  loadBatchFile(sFilename);
+}
+
+//******************************************************************************
+
+bool BatchProcessor::loadBatchFile(const QString & sFilename)
+{
+  if (sFilename.isEmpty()) return false;
+
+  QFile qFile(sFilename);
+  if (!qFile.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,
+                         tr("Could not open file"),
+                         tr("Could not open batch file %1 for reading.")
+                            .arg(m_oOutputFile.fileName()));
+    return false;
+  }
+
+  ui->batchEdit->setPlainText(qFile.readAll());
+  this->updateBatchFileMenu(QFileInfo(sFilename).absolutePath());
+
+  return true;
+}
+
+//******************************************************************************
+
 void BatchProcessor::runBatch()
 {
-	processBatch(ui->slaveEdit->text(), true);
+  processBatch(ui->batchEdit->toPlainText(), true);
 }
 
 //******************************************************************************
 
 bool BatchProcessor::validateBatch()
 {
-	return processBatch(ui->slaveEdit->text(), false);
+  return processBatch(ui->batchEdit->toPlainText(), false);
 }
 
 //******************************************************************************
@@ -344,13 +384,13 @@ void BatchProcessor::logOpen(const QString & sFilename)
 
   if (sFilename.isEmpty()) return;
 
-  m_outputFile.setFileName(sFilename);
-  if(!m_outputFile.open(QFile::WriteOnly | QFile::Truncate))
+  m_oOutputFile.setFileName(sFilename);
+  if(!m_oOutputFile.open(QFile::WriteOnly | QFile::Truncate))
   {
     QMessageBox::critical(this,
                           tr("Could not open file"),
                           tr("Could not open output file %1 for writing.")
-                            .arg(m_outputFile.fileName()));
+                            .arg(m_oOutputFile.fileName()));
   }
 }
 
@@ -360,9 +400,9 @@ void BatchProcessor::logWrite(const QString & qStr)
 {
   ui->txtLog->appendPlainText(qStr);
 
-  if (m_outputFile.isOpen())
+  if (m_oOutputFile.isOpen())
   {
-    QTextStream qFileStream(&m_outputFile);
+    QTextStream qFileStream(&m_oOutputFile);
     qFileStream << qStr << endl;
   }
 }
@@ -371,7 +411,31 @@ void BatchProcessor::logWrite(const QString & qStr)
 
 void BatchProcessor::logClose(void)
 {
-  m_outputFile.close();
+  m_oOutputFile.close();
+}
+
+//******************************************************************************
+
+void BatchProcessor::updateBatchFileMenu(const QString & sPath)
+{
+  if (!sPath.isEmpty()) m_oInputDir = QDir(sPath);
+
+  m_oInputMenu.clear();
+  QStringList qasFiles = m_oInputDir.entryList(QStringList("*.qmb"),
+                                               QDir::Files | QDir::Readable,
+                                               QDir::Name);
+  foreach(const QString & qsFile, qasFiles)
+  {
+    m_oInputMenu.addAction(qsFile);
+  }
+
+}
+
+//******************************************************************************
+
+void BatchProcessor::batchMenuTriggered(QAction * qAction)
+{
+  loadBatchFile(m_oInputDir.absolutePath() + "/" + qAction->text());
 }
 
 //******************************************************************************
