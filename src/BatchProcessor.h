@@ -31,13 +31,27 @@
 #include <QTimer>
 #include <QDialog>
 #include <QMenu>
+#include <QTextDocument>
+#include <QSyntaxHighlighter>
 
+#include "BatchParser.h"
 #include "modbus.h"
 
 namespace Ui
 {
   class BatchProcessor;
 } ;
+
+class BatchHighlighter : public QSyntaxHighlighter
+{
+public:
+  BatchHighlighter(QTextDocument * parent, Batch::CBatch & oBatch);
+
+protected:
+  Batch::CBatch   & m_oBatch;
+
+  virtual void highlightBlock(const QString & text);
+};
 
 class BatchProcessor : public QDialog
 {
@@ -98,6 +112,8 @@ private:
   QDir  m_oInputDir;
   QMenu m_oInputMenu;
   QFile m_oOutputFile;
+  BatchHighlighter * m_poBatchHighlighter;
+  Batch::CBatch m_oBatch;
 
 } ;
 

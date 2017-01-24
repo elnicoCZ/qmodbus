@@ -33,10 +33,11 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
 SET(qmodbus_SOURCES src/main.cpp
     src/mainwindow.cpp
     src/BatchProcessor.cpp
-    src/serialsettingswidget.cpp 
+    src/BatchParser.cpp
+    src/serialsettingswidget.cpp
     src/asciisettingswidget.cpp
     src/rtusettingswidget.cpp
-    src/tcpipsettingswidget.cpp 
+    src/tcpipsettingswidget.cpp
     src/ipaddressctrl.cpp
     src/iplineedit.cpp
     3rdparty/qextserialport/qextserialport.cpp
@@ -49,9 +50,10 @@ SET(qmodbus_SOURCES src/main.cpp
 
 SET(qmodbus_INCLUDES src/mainwindow.h
     src/BatchProcessor.h
-    src/serialsettingswidget.h 
-    src/imodbus.h 
-    src/tcpipsettingswidget.h 
+    src/BatchParser.h
+    src/serialsettingswidget.h
+    src/imodbus.h
+    src/tcpipsettingswidget.h
     src/ipaddressctrl.h
     src/iplineedit.h
     3rdparty/qextserialport/qextserialport.h
@@ -78,7 +80,7 @@ ENDIF(WIN32)
 SET(qmodbus_UI forms/mainwindow.ui
                forms/about.ui
                forms/BatchProcessor.ui
-               forms/serialsettingswidget.ui 
+               forms/serialsettingswidget.ui
                forms/tcpipsettingswidget.ui
 	           forms/ipaddressctrl.ui
   )

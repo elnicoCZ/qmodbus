@@ -27,13 +27,76 @@
 #include <QDateTime>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTextBlock>
 
+#include <iostream>
 #include <errno.h>
 
 #include "BatchProcessor.h"
+#include "BatchParser.h"
 #include "modbus-private.h"
 #include "ui_BatchProcessor.h"
 
+//******************************************************************************
+//******************************************************************************
+//******************************************************************************
+
+BatchHighlighter::BatchHighlighter(QTextDocument * parent,
+                                   Batch::CBatch & oBatch):
+  QSyntaxHighlighter(parent),
+  m_oBatch(oBatch)
+{
+  //
+}
+
+//******************************************************************************
+
+void BatchHighlighter::highlightBlock(const QString & text)
+{
+  // rebuild the model
+  m_oBatch.rebuild(((QTextDocument*)parent())->toPlainText());
+
+  std::cerr << "Highlighter: Start" << std::endl;
+
+  int nBlockStart = currentBlock().position();
+  int nBlockLen   = currentBlock().length();
+  int nIdxStart   = m_oBatch.commandIndex(nBlockStart);
+  int nIdxEnd     = m_oBatch.commandIndex(nBlockStart + nBlockLen - 2);
+
+  std::cerr << "Highlighter: " << nBlockStart << " "
+  << nBlockLen << " " << nIdxStart << " " << nIdxEnd << std::endl;
+  for (int i=nIdxStart; i<=nIdxEnd; ++i)
+  {
+    Batch::CCommand * poCommand = m_oBatch.at(i);
+    if (!poCommand)
+    {
+      std::cerr << "Highlighter: No command at index " << i << std::endl;
+      continue;
+    }
+    int nStart = poCommand->start() - nBlockStart;
+    int nEnd_  = poCommand->end()+1;  // end+1
+    if (nStart < 0) nStart = 0;   // command starts in a previous block
+    if (nEnd_ > nBlockLen) nEnd_ = nBlockLen;
+    std::cerr << "Highlighter: " << nStart << " " << nEnd_ << std::endl;
+
+    QBrush qBrush;
+    QTextCharFormat qFormat;
+    switch (poCommand->type())
+    {
+      case Batch::neCommandComment   : qBrush = Qt::darkGray ; break;
+      case Batch::neCommandDirective : qBrush = Qt::darkRed  ; break;
+      case Batch::neCommandDelay     : qBrush = Qt::darkBlue ; break;
+      case Batch::neCommandRequest   : qBrush = Qt::darkGreen; break;
+      default                        : qBrush = Qt::black    ; break;
+    }
+    qFormat.setForeground(qBrush);
+    if (!poCommand->valid()) qFormat.setBackground(Qt::red);
+    setFormat(nStart, nEnd_-nStart, qFormat);
+  }
+}
+
+//******************************************************************************
+//******************************************************************************
 //******************************************************************************
 
 BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
@@ -42,7 +105,8 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
   m_modbus( modbus ),
   m_timer(),
   m_oInputDir(),
-  m_oInputMenu(this)
+  m_oInputMenu(this),
+  m_oBatch("")
 {
   ui->setupUi(this);
 
@@ -52,6 +116,9 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
   updateBatchFileMenu();
   connect(&m_oInputMenu, SIGNAL(triggered(QAction*)),
           this, SLOT(batchMenuTriggered(QAction*)));
+
+  m_poBatchHighlighter = new BatchHighlighter(ui->batchEdit->document(),
+                                              m_oBatch);
 }
 
 //******************************************************************************
@@ -60,6 +127,7 @@ BatchProcessor::~BatchProcessor()
 {
   stop();
   delete ui;
+  delete m_poBatchHighlighter;
 }
 
 //******************************************************************************
@@ -428,7 +496,6 @@ void BatchProcessor::updateBatchFileMenu(const QString & sPath)
   {
     m_oInputMenu.addAction(qsFile);
   }
-
 }
 
 //******************************************************************************
