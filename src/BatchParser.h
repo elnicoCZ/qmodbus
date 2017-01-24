@@ -52,17 +52,19 @@ protected:
   int   m_nTextLen;
   bool  m_bValid;
 
+  static QString noWhitespace(const QString & qsStr);
+
 public:
   CCommand(const QString & qsCommand, int nStart);
   virtual ~CCommand();
 
-  virtual ECommandType type() = 0;
+  virtual ECommandType type() const = 0;
 
-  int start() { return m_nTextStart; }
-  int len()   { return m_nTextLen; }
-  int end()   { return m_nTextStart + m_nTextLen - 1; }
+  int start() const { return m_nTextStart; }
+  int len()   const { return m_nTextLen; }
+  int end()   const { return m_nTextStart + m_nTextLen - 1; }
 
-  bool valid() { return m_bValid; }
+  bool valid() const { return m_bValid; }
 };
 
 //****************************************************************************//
@@ -72,7 +74,7 @@ class CEmpty : public CCommand
 public:
   CEmpty(const QString & qsCommand, int nStart);
 
-  virtual ECommandType type() { return neCommandEmpty; }
+  virtual ECommandType type() const { return neCommandEmpty; }
 };
 
 //****************************************************************************//
@@ -82,7 +84,7 @@ class CComment : public CCommand
 public:
   CComment(const QString & qsCommand, int nStart);
 
-  virtual ECommandType type() { return neCommandComment; }
+  virtual ECommandType type() const { return neCommandComment; }
 };
 
 //****************************************************************************//
@@ -92,7 +94,7 @@ class CDirective : public CCommand
 public:
   CDirective(const QString & qsCommand, int nStart);
 
-  virtual ECommandType type() { return neCommandDirective; }
+  virtual ECommandType type() const { return neCommandDirective; }
 };
 
 //****************************************************************************//
@@ -104,7 +106,7 @@ public:
 
   CDelay(const QString & qsCommand, int nStart);
 
-  virtual ECommandType type() { return neCommandDelay; }
+  virtual ECommandType type() const { return neCommandDelay; }
 };
 
 //****************************************************************************//
@@ -117,7 +119,7 @@ public:
 
   CRequest(const QString & qsCommand, int nStart);
 
-  virtual ECommandType type() { return neCommandRequest; }
+  virtual ECommandType type() const { return neCommandRequest; }
 };
 
 //****************************************************************************//
@@ -134,10 +136,10 @@ public:
 
   void rebuild(const QString & qsBatch);
 
-  int count(void) { return m_qapoCommands.count(); }
-  bool isValid(void);
-  CCommand * at(int nPos);
-  int commandIndex(int nCharPos);
+  int count(void) const { return m_qapoCommands.count(); }
+  bool isValid(void) const;
+  CCommand * at(int nPos) const;
+  int commandIndex(int nCharPos) const;
 
 private:
   void free(void);

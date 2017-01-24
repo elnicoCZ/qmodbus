@@ -57,13 +57,21 @@ CCommand::~CCommand()
 }
 
 //******************************************************************************
+
+QString CCommand::noWhitespace(const QString & qsStr)
+{
+  QString qsWorkStr(qsStr);
+  return qsWorkStr.remove(QRegExp("\\s"));
+}
+
+//******************************************************************************
 //******************************************************************************
 //******************************************************************************
 
 CEmpty::CEmpty(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  //
+  // empty command is always valid
 }
 
 //******************************************************************************
@@ -73,7 +81,7 @@ CEmpty::CEmpty(const QString & qsCommand, int nStart):
 CComment::CComment(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  //
+  // comment is always valid
 }
 
 //******************************************************************************
@@ -93,7 +101,7 @@ CDirective::CDirective(const QString & qsCommand, int nStart):
 CDelay::CDelay(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  //
+  m_nDuration = qsCommand.toInt(&m_bValid);
 }
 
 //******************************************************************************
@@ -192,7 +200,7 @@ void CBatch::free(void)
 
 //******************************************************************************
 
-bool CBatch::isValid(void)
+bool CBatch::isValid(void) const
 {
   foreach (CCommand * poCommand, m_qapoCommands)
   {
@@ -203,7 +211,7 @@ bool CBatch::isValid(void)
 
 //******************************************************************************
 
-CCommand * CBatch::at(int nPos)
+CCommand * CBatch::at(int nPos) const
 {
   if ((nPos < 0) || (nPos >= m_qapoCommands.count())) return NULL;
   return m_qapoCommands.at(nPos);
@@ -211,7 +219,7 @@ CCommand * CBatch::at(int nPos)
 
 //******************************************************************************
 
-int CBatch::commandIndex(int nCharPos)
+int CBatch::commandIndex(int nCharPos) const
 {
   int i;
 
