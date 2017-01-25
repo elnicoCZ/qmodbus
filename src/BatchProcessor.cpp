@@ -29,7 +29,6 @@
 #include <QMessageBox>
 #include <QTextBlock>
 
-#include <iostream>
 #include <errno.h>
 
 #include "BatchProcessor.h"
@@ -56,29 +55,26 @@ void BatchHighlighter::highlightBlock(const QString & text)
   // rebuild the model
   m_oBatch.rebuild(((QTextDocument*)parent())->toPlainText());
 
-  std::cerr << "Highlighter: Start" << std::endl;
-
   int nBlockStart = currentBlock().position();
   int nBlockLen   = currentBlock().length();
   int nIdxStart   = m_oBatch.commandIndex(nBlockStart);
-  int nIdxEnd     = m_oBatch.commandIndex(nBlockStart + nBlockLen - 2);
+  int nIdxEnd     = m_oBatch.commandIndex(nBlockStart + nBlockLen - 1);
 
-  std::cerr << "Highlighter: " << nBlockStart << " "
-  << nBlockLen << " " << nIdxStart << " " << nIdxEnd << std::endl;
   for (int i=nIdxStart; i<=nIdxEnd; ++i)
   {
     Batch::CCommand * poCommand = m_oBatch.at(i);
     if (!poCommand)
     {
-      std::cerr << "Highlighter: No command at index " << i << std::endl;
+      // should not happen
+      qDebug() << "Highlighter: No command at index" << i;
       continue;
     }
     int nStart = poCommand->start() - nBlockStart;
-    int nEnd_  = poCommand->end()+1;  // end+1
-    if (nStart < 0) nStart = 0;   // command starts in a previous block
-    if (nEnd_ > nBlockLen) nEnd_ = nBlockLen;
-    std::cerr << "Highlighter: " << nStart << " " << nEnd_ << std::endl;
+    int nEnd_  = nStart + poCommand->len();                 // 1 char after the end
+    if (nStart < 0) nStart = 0;                             // command starts in a previous block
+    if (nEnd_ > nBlockLen) nEnd_ = nBlockLen;               // command ends in a following block
 
+    // Select and apply the format
     QBrush qBrush;
     QTextCharFormat qFormat;
     switch (poCommand->type())
@@ -92,6 +88,10 @@ void BatchHighlighter::highlightBlock(const QString & text)
     qFormat.setForeground(qBrush);
     if (!poCommand->valid()) qFormat.setBackground(Qt::red);
     setFormat(nStart, nEnd_-nStart, qFormat);
+
+    // Keep the last command type in the block state.
+    // If the value changes, the next block is automatically rehighlighted.
+    setCurrentBlockState(poCommand->type());
   }
 }
 
