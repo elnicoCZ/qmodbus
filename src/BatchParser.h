@@ -113,10 +113,46 @@ public:
 
 class CRequest : public CCommand
 {
-public:
-  int   m_nSlaveId;
-  int   m_nFuncId;
+protected:
+  typedef enum EFuncOperation_
+  {
+    neFuncOperationInvalid,
+    neFuncOperationRead,
+    neFuncOperationWrite
+  } EFuncOperation;
 
+  typedef enum EFuncSubject_
+  {
+    neFuncSubjectInvalid,
+    neFuncSubjectCoil,
+    neFuncSubjectHoldingReg,
+    neFuncSubjectInputReg,
+    neFuncSubjectDiscreteInput
+  } EFuncSubject;
+
+  typedef enum EFuncScope_
+  {
+    neFuncScopeInvalid,
+    neFuncScopeSingle,
+    neFuncScopeMultiple
+  } EFuncScope;
+
+  typedef struct TFuncType_
+  {
+    EFuncOperation  eOperation;
+    EFuncSubject    eSubject;
+    EFuncScope      eScope;
+  } TFuncType;
+
+  static TFuncType getFuncType(int nFuncId);
+
+protected:
+  int         m_nSlaveId;
+  int         m_nFuncId;
+  QList<int>  m_qanAddrs;
+  QList<int>  m_qanVals;
+
+public:
   CRequest(const QString & qsCommand, int nStart);
 
   virtual ECommandType type() const { return neCommandRequest; }

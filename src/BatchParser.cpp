@@ -23,6 +23,7 @@
  */
 
 #include "BatchParser.h"
+#include "modbus-private.h"
 #include <QRegExp>
 #include <QStringList>
 
@@ -30,13 +31,15 @@ using namespace Batch;
 
 //******************************************************************************
 
-#define COMMAND_SEPARATOR               ';'
 #define STARTCHAR_DELAY                 '+'
 #define STARTCHAR_DIRECTIVE             '@'
 #define STARTCHAR_COMMENT               '#'
 
-#define REQUEST_ADDR_SEPARATOR          ':'
-#define REQUEST_DATA_SEPARATOR          ','
+#define SEPARATOR_COMMAND               ';'
+#define SEPARATOR_REQ_SLAVE_FUNC        'x'
+#define SEPARATOR_REQ_FUNC_DATA         ':'
+#define SEPARATOR_REQ_DATA_DATA         ','
+#define SEPARATOR_REQ_DATA_VAL          '='
 
 //******************************************************************************
 //******************************************************************************
@@ -109,9 +112,124 @@ CDelay::CDelay(const QString & qsCommand, int nStart):
 //******************************************************************************
 
 CRequest::CRequest(const QString & qsCommand, int nStart):
-  CCommand(qsCommand, nStart)
+  CCommand(qsCommand, nStart),
+  m_nSlaveId(-1),
+  m_nFuncId(-1)
 {
-  //
+  bool bSucc = true;
+
+  const QStringList qasCommand = qsCommand.split(SEPARATOR_REQ_FUNC_DATA);
+  m_bValid &= (2 == qasCommand.length()); if (!m_bValid) return;
+
+  // parse the destination (slave, func)
+  const QStringList qasDst = qasCommand.first().split(SEPARATOR_REQ_SLAVE_FUNC);
+  m_bValid &= (2 == qasCommand.length()); if (!m_bValid) return;
+
+  m_nSlaveId  = qasDst.first().toInt(&bSucc);     m_bValid &= bSucc;
+  m_nFuncId   = qasDst.last ().toInt(&bSucc, 16); m_bValid &= bSucc;
+
+  TFuncType oFuncType = CRequest::getFuncType(m_nFuncId);
+  m_bValid &= (neFuncOperationInvalid != oFuncType.eOperation);
+  if (!m_bValid) return;
+
+  // parse the data
+  const QStringList qasData = qasCommand.last().split(SEPARATOR_REQ_DATA_DATA);
+  m_bValid &= (qasData.length() > 0); if (!m_bValid) return;
+
+  foreach (const QString & qsData, qasData)
+  {
+    const QStringList qasAddrVal = qsData.split(SEPARATOR_REQ_DATA_VAL);
+
+    switch (oFuncType.eOperation)
+    {
+      case neFuncOperationRead:
+        m_bValid &= (qasAddrVal.count() == 1);
+        break;
+
+      case neFuncOperationWrite:
+        m_bValid &= (qasAddrVal.count() == 2);
+        break;
+
+      default:
+        // should not happen
+        m_bValid = false;
+        break;
+    }
+    if (!m_bValid) return;
+
+    m_qanAddrs.append(qasAddrVal.first().toInt(&bSucc)); m_bValid &= bSucc;
+    m_qanVals .append(qasAddrVal.last ().toInt(&bSucc)); m_bValid &= bSucc;
+    if (!m_bValid) return;
+  }
+
+}
+
+//******************************************************************************
+
+CRequest::TFuncType CRequest::getFuncType(int nFuncId)
+{
+  TFuncType oType =
+  {
+    .eOperation = neFuncOperationInvalid,
+    .eSubject   = neFuncSubjectInvalid,
+    .eScope     = neFuncScopeInvalid
+  };
+
+  switch (nFuncId)
+  {
+    case MODBUS_FC_READ_COILS:
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+    case MODBUS_FC_READ_INPUT_REGISTERS:
+      oType.eOperation = neFuncOperationRead;
+      break;
+
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+      oType.eOperation = neFuncOperationWrite;
+      break;
+
+    default:
+      // return invalid type
+      return oType;
+  }
+
+  switch (nFuncId)
+  {
+    case MODBUS_FC_READ_COILS:
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_MULTIPLE_COILS:
+      oType.eSubject = neFuncSubjectCoil;
+      break;
+
+    case MODBUS_FC_READ_DISCRETE_INPUTS:
+      oType.eSubject = neFuncSubjectDiscreteInput;
+      break;
+
+    case MODBUS_FC_READ_INPUT_REGISTERS:
+      oType.eSubject = neFuncSubjectInputReg;
+      break;
+
+    default:
+      oType.eSubject = neFuncSubjectHoldingReg;
+      break;
+  }
+
+  switch (nFuncId)
+  {
+    case MODBUS_FC_WRITE_SINGLE_COIL:
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+      oType.eScope = neFuncScopeSingle;
+      break;
+
+    default:
+      oType.eScope = neFuncScopeMultiple;
+      break;
+  }
+
+  return oType;
 }
 
 //******************************************************************************
@@ -145,7 +263,7 @@ void CBatch::rebuild(const QString & qsBatch)
 
 void CBatch::create(const QString & qsBatch)
 {
-  const QStringList   qasCommands = qsBatch.split(COMMAND_SEPARATOR);
+  const QStringList   qasCommands = qsBatch.split(SEPARATOR_COMMAND);
   int                 nPos = 0;
   QRegExp             qNonWhitespace("\\S");
   CCommand          * poCommand;
