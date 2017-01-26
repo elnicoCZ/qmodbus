@@ -191,8 +191,10 @@ public:
   void rebuild(const QString & qsBatch);
   /** Executes the batch. */
   void exec(void) const;
-  /** Initiates stopping the execution (does not stop immediately!). */
-  void stop(void);
+  /** Initiates stopping the execution.
+   * @param[in] bForce  Use true to terminate the execution immediately.
+   *                    This might have negative impact on open resources! */
+  void stop(bool bForce = false);
   /** Checkes whether the batch is currently being executed. */
   bool isExecuting(void) const;
 

@@ -80,7 +80,7 @@ private:
 
 private slots:
   void start();
-  void stop();
+  void stop(bool bForce = false);
   void browseOutputFile();
   void browseBatchFile();
   void batchMenuTriggered(QAction * qAction);

@@ -359,9 +359,14 @@ void CBatch::exec(void) const
 
 //******************************************************************************
 
-void CBatch::stop(void)
+void CBatch::stop(bool bForce)
 {
   m_poProcessor->stop();
+  if (bForce)
+  {
+    m_poProcessor->terminate();
+    m_poProcessor->wait();
+  }
 }
 
 //******************************************************************************

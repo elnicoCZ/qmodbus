@@ -135,7 +135,7 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
 
 BatchProcessor::~BatchProcessor()
 {
-  stop();
+  stop(true);
   delete ui;
   delete m_poBatchHighlighter;
 }
@@ -169,7 +169,7 @@ void BatchProcessor::start()
 
 //******************************************************************************
 
-void BatchProcessor::stop()
+void BatchProcessor::stop(bool bForce)
 {
   ui->stopButton->setEnabled(false);
 
@@ -178,7 +178,7 @@ void BatchProcessor::stop()
 
   if (m_oBatch.isExecuting())
   {
-    m_oBatch.stop();
+    m_oBatch.stop(bForce);
   }
   else {
     setControlsEnabled(true);
