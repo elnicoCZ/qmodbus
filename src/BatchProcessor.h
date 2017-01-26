@@ -50,7 +50,7 @@ public:
 protected:
   Batch::CBatch   & m_oBatch;
 
-  virtual void highlightBlock(const QString & text);
+  virtual void highlightBlock(const QString & qsBlockText);
 };
 
 class BatchProcessor : public QDialog
@@ -61,24 +61,10 @@ public:
   ~BatchProcessor();
 
 private:
-  typedef enum EFuncType_
-  {
-    neFuncTypeRead,
-    neFuncTypeWrite,
-    neFuncTypeInvalid
-  } EFuncType;
-
   /** */
   bool validateBatch();
   /** */
-  bool processBatch(const QString & qBatch, bool bExecute);
-  /** */
-  void execRequest(int            iSlaveId,
-                   int            iFuncId,
-                   int            iAddr,
-                   int            iVal);
-  /** */
-  static EFuncType getFuncType(int iFuncId);
+  void setControlsEnabled(bool bEnable);
 
   /** */
   void logOpen(const QString & sFilename);
@@ -99,6 +85,16 @@ private slots:
   void browseBatchFile();
   void batchMenuTriggered(QAction * qAction);
   void runBatch();
+  void highlightCommand(int nPos);
+  /** */
+  void execStart();
+  /** */
+  void execStop(bool bFinished);
+  /** */
+  void execRequest(int            iSlaveId,
+                   int            iFuncId,
+                   int            iAddr,
+                   int            iVal);
 
 private:
   QString sendModbusRequest(int iSlaveID,
@@ -114,11 +110,9 @@ private:
   QFile m_oOutputFile;
   BatchHighlighter * m_poBatchHighlighter;
   Batch::CBatch m_oBatch;
+  bool m_bStopAfterExecution;
 
 } ;
-
-
-
 
 
 #endif // MAINWINDOW_H

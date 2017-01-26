@@ -50,7 +50,7 @@ BatchHighlighter::BatchHighlighter(QTextDocument * parent,
 
 //******************************************************************************
 
-void BatchHighlighter::highlightBlock(const QString & text)
+void BatchHighlighter::highlightBlock(const QString & qsBlockText)
 {
   // rebuild the model
   m_oBatch.rebuild(((QTextDocument*)parent())->toPlainText());
@@ -91,7 +91,7 @@ void BatchHighlighter::highlightBlock(const QString & text)
 
     // Keep the last command type in the block state.
     // If the value changes, the next block is automatically rehighlighted.
-    setCurrentBlockState(poCommand->type());
+    setCurrentBlockState(poCommand->type() + (poCommand->valid() ? 0 : 100));
   }
 }
 
@@ -106,7 +106,8 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
   m_timer(),
   m_oInputDir(),
   m_oInputMenu(this),
-  m_oBatch("")
+  m_oBatch(""),
+  m_bStopAfterExecution(true)
 {
   ui->setupUi(this);
 
@@ -114,11 +115,20 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
 
   ui->batchLoadBtn->setMenu(&m_oInputMenu);
   updateBatchFileMenu();
-  connect(&m_oInputMenu, SIGNAL(triggered(QAction*)),
-          this, SLOT(batchMenuTriggered(QAction*)));
+  connect(&m_oInputMenu, SIGNAL(triggered         (QAction*)),
+          this         , SLOT  (batchMenuTriggered(QAction*)));
 
   m_poBatchHighlighter = new BatchHighlighter(ui->batchEdit->document(),
                                               m_oBatch);
+
+  connect(&m_oBatch, SIGNAL(execCommand     (int)),
+          this     , SLOT  (highlightCommand(int)));
+  connect(&m_oBatch, SIGNAL(execStart()),
+          this     , SLOT  (execStart()));
+  connect(&m_oBatch, SIGNAL(execStop(bool)),
+          this     , SLOT  (execStop(bool)));
+  connect(&m_oBatch, SIGNAL(execRequest(int,int,int,int)),
+          this     , SLOT  (execRequest(int,int,int,int)));
 }
 
 //******************************************************************************
@@ -142,31 +152,39 @@ void BatchProcessor::start()
     return;
   }
 
+  setControlsEnabled(false);
+
   logClose();
   logOpen(ui->outputFileEdit->text());
-
-  runBatch();
 
   int iPeriod = ui->intervalSpinBox->value();
   if (iPeriod > 0)
   {
+    m_bStopAfterExecution = false;
     m_timer.start(iPeriod * 1000);
-
-    ui->startButton->setEnabled(false);
-    ui->stopButton->setEnabled(true);
   }
+
+  runBatch();
 }
 
 //******************************************************************************
 
 void BatchProcessor::stop()
 {
-  logClose();
+  ui->stopButton->setEnabled(false);
 
+  m_bStopAfterExecution = true;
   m_timer.stop();
 
-  ui->startButton->setEnabled(true);
-  ui->stopButton->setEnabled(false);
+  if (m_oBatch.isExecuting())
+  {
+    m_oBatch.stop();
+  }
+  else {
+    setControlsEnabled(true);
+  }
+
+  logClose();
 }
 
 //******************************************************************************
@@ -220,84 +238,65 @@ bool BatchProcessor::loadBatchFile(const QString & sFilename)
 
 void BatchProcessor::runBatch()
 {
-  processBatch(ui->batchEdit->toPlainText(), true);
+  m_oBatch.exec();
 }
 
 //******************************************************************************
 
 bool BatchProcessor::validateBatch()
 {
-  return processBatch(ui->batchEdit->toPlainText(), false);
+  return m_oBatch.isValid();
 }
 
 //******************************************************************************
 
-bool BatchProcessor::processBatch(const QString & qBatch, bool bExecute)
+void BatchProcessor::setControlsEnabled(bool bEnable)
 {
-  bool              bParseSucc = true;
-  const QStringList qSlaves    = qBatch.split( ';' );
-
-  foreach( const QString & qSlave, qSlaves )
-  {
-    const QString     qCommand = qSlave.split(':').first();
-    const QStringList qDatas   = qSlave.split(':').last ().split(',');
-    bool              bSucc    = true;
-
-    const int         iSlaveId = qCommand.split('x').first().toInt(&bSucc);     bParseSucc &= bSucc;
-    const int         iFuncId  = qCommand.split('x').last ().toInt(&bSucc, 16); bParseSucc &= bSucc;
-
-    foreach( const QString & qData, qDatas )
-    {
-      const QStringList qAddrVal = qData.split('=');
-      const int iAddr = qAddrVal.first().toInt(&bSucc); bParseSucc &= bSucc;
-      const int iVal  = qAddrVal.last ().toInt(&bSucc); bParseSucc &= bSucc;
-
-      switch (getFuncType(iFuncId))
-      {
-        case neFuncTypeRead:
-          bParseSucc &= (qAddrVal.count() == 1);
-          break;
-
-        case neFuncTypeWrite:
-          bParseSucc &= (qAddrVal.count() == 2);
-          break;
-
-        default:
-          bParseSucc = false;
-          break;
-      }
-
-      if (bParseSucc && bExecute)
-      {
-        execRequest(iSlaveId, iFuncId, iAddr, iVal);
-      }
-    }
-  }
-
-  return bParseSucc;
+  ui->batchEdit->setReadOnly(!bEnable);
+  ui->startButton->setEnabled(bEnable);
+  ui->stopButton->setEnabled(!bEnable);
+  repaint();
 }
 
 //******************************************************************************
 
-BatchProcessor::EFuncType BatchProcessor::getFuncType(int iFuncId)
+void BatchProcessor::highlightCommand(int nPos)
 {
-  switch (iFuncId)
-  {
-    case MODBUS_FC_READ_COILS:
-    case MODBUS_FC_READ_DISCRETE_INPUTS:
-    case MODBUS_FC_READ_HOLDING_REGISTERS:
-    case MODBUS_FC_READ_INPUT_REGISTERS:
-      return neFuncTypeRead;
+  QList<QTextEdit::ExtraSelection> qaSelections;
+  QTextEdit::ExtraSelection qSelection;
 
-    case MODBUS_FC_WRITE_SINGLE_COIL:
-    case MODBUS_FC_WRITE_SINGLE_REGISTER:
-    case MODBUS_FC_WRITE_MULTIPLE_COILS:
-    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-      return neFuncTypeWrite;
+  int nCursorPos;
+  QString qsText = ui->batchEdit->toPlainText();
+  qSelection.cursor = QTextCursor(ui->batchEdit->document());
+  // select from the first non-whitespace character...
+  nCursorPos = qsText.indexOf(QRegExp("\\S"), m_oBatch.at(nPos)->start());
+  qSelection.cursor.setPosition(nCursorPos);
+  // ... to the last non-whitespace character
+  nCursorPos = qsText.lastIndexOf(QRegExp("\\S"), m_oBatch.at(nPos)->end());
+  qSelection.cursor.setPosition(nCursorPos+1, QTextCursor::KeepAnchor);
 
-    default:
-      return neFuncTypeInvalid;
-  }
+  qSelection.format.setBackground(Qt::yellow);
+
+  qaSelections.append(qSelection);
+  ui->batchEdit->setExtraSelections(qaSelections);
+}
+
+//******************************************************************************
+
+void BatchProcessor::execStart()
+{
+  //
+}
+
+//******************************************************************************
+
+void BatchProcessor::execStop(bool bFinished)
+{
+  // clear selection
+  ui->batchEdit->setExtraSelections(QList<QTextEdit::ExtraSelection>());
+
+  // re-enable the controls (if fully stopped)
+  if (m_bStopAfterExecution) setControlsEnabled(true);
 }
 
 //******************************************************************************

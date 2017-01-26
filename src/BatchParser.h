@@ -25,6 +25,8 @@
 #ifndef _BATCH_PARSER_H
 #define _BATCH_PARSER_H
 
+#include <QObject>
+#include <QThread>
 #include <QString>
 #include <QList>
 
@@ -42,6 +44,8 @@ typedef enum {
   neCommandRequest,
 
 } ECommandType;
+
+class CBatchProc;
 
 //****************************************************************************//
 
@@ -101,12 +105,15 @@ public:
 
 class CDelay : public CCommand
 {
-public:
+protected:
   int   m_nDuration;
 
+public:
   CDelay(const QString & qsCommand, int nStart);
 
   virtual ECommandType type() const { return neCommandDelay; }
+
+  int duration() const { return m_nDuration; }
 };
 
 //****************************************************************************//
@@ -156,30 +163,75 @@ public:
   CRequest(const QString & qsCommand, int nStart);
 
   virtual ECommandType type() const { return neCommandRequest; }
+
+  int slaveId() const { return m_nSlaveId; }
+  int funcId () const { return m_nFuncId ; }
+  const QList<int> & addrs() const { return m_qanAddrs; }
+  const QList<int> & vals () const { return m_qanVals ; }
 };
 
 //****************************************************************************//
 
-class CBatch
+class CBatch: public QObject
 {
+  Q_OBJECT
+
+  friend class CBatchProc;
+
 protected:
-  QList<CCommand *> m_qapoCommands;
-  QString           m_qsBatch;
+  QList<CCommand *>   m_qapoCommands;
+  QString             m_qsBatch;
+  CBatchProc        * m_poProcessor;
 
 public:
   CBatch(const QString & qsBatch);
   virtual ~CBatch();
 
+  /** Rebuilds the batch model if the string differs from the current batch. */
   void rebuild(const QString & qsBatch);
+  /** Executes the batch. */
+  void exec(void) const;
+  /** Initiates stopping the execution (does not stop immediately!). */
+  void stop(void);
+  /** Checkes whether the batch is currently being executed. */
+  bool isExecuting(void) const;
 
   int count(void) const { return m_qapoCommands.count(); }
   bool isValid(void) const;
   CCommand * at(int nPos) const;
   int commandIndex(int nCharPos) const;
 
+signals:
+  /** Execution started. */
+  void execStart() const;
+  /** Execution complete. */
+  void execStop(bool bFinished) const;
+  /** Executing command at given index. */
+  void execCommand(int nPos) const;
+
+  /** Request command handler. */
+  void execRequest(int nSlaveId, int nFuncId, int nAddr, int nVal) const;
+
 private:
   void free(void);
   void create(const QString & qsBatch);
+};
+
+//****************************************************************************//
+
+class CBatchProc: public QThread
+{
+protected:
+  const CBatch  * m_poBatch;
+  bool            m_bStop;
+
+  virtual void run();
+
+public:
+  CBatchProc(const CBatch * poBatch);
+
+  /** Stop execution. */
+  void stop();
 };
 
 //****************************************************************************//

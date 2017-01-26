@@ -238,6 +238,7 @@ CRequest::TFuncType CRequest::getFuncType(int nFuncId)
 
 CBatch::CBatch(const QString & qsBatch)
 {
+  m_poProcessor = new CBatchProc(this);
   this->create(qsBatch);
 }
 
@@ -246,6 +247,7 @@ CBatch::CBatch(const QString & qsBatch)
 CBatch::~CBatch()
 {
   this->free();
+  delete m_poProcessor;
 }
 
 //******************************************************************************
@@ -346,6 +348,89 @@ int CBatch::commandIndex(int nCharPos) const
     if (m_qapoCommands.at(i)->start() > nCharPos) break;
   }
   return i-1;
+}
+
+//******************************************************************************
+
+void CBatch::exec(void) const
+{
+  m_poProcessor->start();
+}
+
+//******************************************************************************
+
+void CBatch::stop(void)
+{
+  m_poProcessor->stop();
+}
+
+//******************************************************************************
+
+bool CBatch::isExecuting(void) const
+{
+  return m_poProcessor->isRunning();
+}
+
+//******************************************************************************
+//******************************************************************************
+//******************************************************************************
+
+CBatchProc::CBatchProc(const CBatch * poBatch):
+  QThread(),
+  m_poBatch(poBatch),
+  m_bStop(false)
+{
+  //
+}
+
+//******************************************************************************
+
+void CBatchProc::run()
+{
+  m_bStop = false;
+  emit m_poBatch->execStart();
+
+  for (int i=0; i<m_poBatch->m_qapoCommands.count() && !m_bStop; ++i)
+  {
+    CCommand * poCommand = m_poBatch->m_qapoCommands.at(i);
+    switch (poCommand->type())
+    {
+      case neCommandDelay:
+        emit m_poBatch->execCommand(i);
+
+        this->msleep(((CDelay*)poCommand)->duration());
+        break;
+
+      case neCommandRequest:
+      {
+        emit m_poBatch->execCommand(i);
+        this->msleep(10); // give GUI some time to process the signal
+
+        CRequest * poRequest = (CRequest*)poCommand;
+        for (int j=0; j<poRequest->addrs().count(); ++j)
+        {
+          emit m_poBatch->execRequest(poRequest->slaveId(),
+                                      poRequest->funcId(),
+                                      poRequest->addrs()[j],
+                                      poRequest->vals()[j]);
+        }
+        break;
+      }
+
+      default:
+        // nothing to execute
+        break;
+    }
+  }
+
+  emit m_poBatch->execStop(!m_bStop);
+}
+
+//******************************************************************************
+
+void CBatchProc::stop()
+{
+  this->m_bStop = true;
 }
 
 //******************************************************************************
