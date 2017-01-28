@@ -42,6 +42,13 @@ using namespace Batch;
 #define SEPARATOR_REQ_DATA_VAL          '='
 #define SEPARATOR_REQ_DATA_RANGE        '-'
 
+#define REQ_SLAVE_ID_MIN                (0)
+#define REQ_SLAVE_ID_MAX                (254)
+#define REQ_ADDR_MIN                    (0)
+#define REQ_ADDR_MAX                    (65535)
+#define REQ_VAL_MIN                     (0)
+#define REQ_VAL_MAX                     (65535)
+
 //******************************************************************************
 //******************************************************************************
 //******************************************************************************
@@ -58,6 +65,32 @@ CCommand::CCommand(const QString & qsCommand, int nStart):
 CCommand::~CCommand()
 {
   //
+}
+
+//******************************************************************************
+
+int CCommand::validateInt(const QString qStr, int nBase, int nMin, int nMax)
+{
+  bool bSucc = true;
+  int  ret;
+
+  ret = qStr.toInt(&bSucc, nBase);
+
+  if (nMax >= nMin)
+  {
+    bSucc &= ((ret >= nMin) && (ret <= nMax));
+  }
+
+  m_bValid &= bSucc;
+  return ret;
+}
+
+//******************************************************************************
+
+bool CCommand::validateTrue(bool bStatement)
+{
+  m_bValid &= bStatement;
+  return bStatement;
 }
 
 //******************************************************************************
@@ -105,7 +138,7 @@ CDirective::CDirective(const QString & qsCommand, int nStart):
 CDelay::CDelay(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  m_nDuration = qsCommand.toInt(&m_bValid);
+  m_nDuration = validateInt(qsCommand);
 }
 
 //******************************************************************************
@@ -117,25 +150,24 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
   m_nSlaveId(-1),
   m_nFuncId(-1)
 {
-  bool bSucc = true;
-
   const QStringList qasCommand = qsCommand.split(SEPARATOR_REQ_FUNC_DATA);
-  m_bValid &= (2 == qasCommand.length()); if (!m_bValid) return;
+  if (!validateTrue(2 == qasCommand.length())) return;
 
   // parse the destination (slave, func)
   const QStringList qasDst = qasCommand.first().split(SEPARATOR_REQ_SLAVE_FUNC);
-  m_bValid &= (2 == qasCommand.length()); if (!m_bValid) return;
+  if (!validateTrue(2 == qasCommand.length())) return;
 
-  m_nSlaveId  = qasDst.first().toInt(&bSucc);     m_bValid &= bSucc;
-  m_nFuncId   = qasDst.last ().toInt(&bSucc, 16); m_bValid &= bSucc;
+  m_nSlaveId  = validateInt(qasDst.first(), 10,
+                            REQ_SLAVE_ID_MIN, REQ_SLAVE_ID_MAX);
+  m_nFuncId   = validateInt(qasDst.last (), 16);
 
   TFuncType oFuncType = CRequest::getFuncType(m_nFuncId);
-  m_bValid &= (neFuncOperationInvalid != oFuncType.eOperation);
-  if (!m_bValid) return;
+  validateTrue(neFuncOperationInvalid != oFuncType.eOperation);
+  if (!valid()) return;
 
   // parse the data
   const QStringList qasData = qasCommand.last().split(SEPARATOR_REQ_DATA_DATA);
-  m_bValid &= (qasData.length() > 0); if (!m_bValid) return;
+  if (!validateTrue(qasData.length() > 0)) return;
 
   foreach (const QString & qsData, qasData)
   {
@@ -145,38 +177,42 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
     switch (oFuncType.eOperation)
     {
       case neFuncOperationRead:
-        m_bValid &= (qasAddrVal.count() == 1);                          // ADDRS
+        validateTrue(qasAddrVal.count() == 1);                          // ADDRS
         break;
 
       case neFuncOperationWrite:
-        m_bValid &= (qasAddrVal.count() == 2);                          // ADDRS=VAL
-        nVal = qasAddrVal.last().toInt(&bSucc); m_bValid &= bSucc;
+        validateTrue(qasAddrVal.count() == 2);                          // ADDRS=VAL
+        nVal = validateInt(qasAddrVal.last(), 10,
+                           REQ_VAL_MIN, REQ_VAL_MAX);
         break;
 
       default:
         // should not happen
-        m_bValid = false;
+        validateTrue(false);
         break;
     }
-    if (!m_bValid) return;
+    if (!valid()) return;
 
     int nAddr1=0, nAddr2=0;
     const QStringList qasAddrs = qasAddrVal.first().split(SEPARATOR_REQ_DATA_RANGE);
     switch (qasAddrs.length())
     {
       case 1:                                                           // ADDR
-        nAddr1 = qasAddrs.first().toInt(&bSucc); m_bValid &= bSucc;
+        nAddr1 = validateInt(qasAddrs.first(), 10,
+                             REQ_ADDR_MIN, REQ_ADDR_MAX);
         nAddr2 = nAddr1;
         break;
 
       case 2:                                                           // ADDR1-ADDR2
-        nAddr1 = qasAddrs.first().toInt(&bSucc); m_bValid &= bSucc;
-        nAddr2 = qasAddrs.last ().toInt(&bSucc); m_bValid &= bSucc;
-        m_bValid &= (nAddr1 < nAddr2);
+        nAddr1 = validateInt(qasAddrs.first(), 10,
+                             REQ_ADDR_MIN, REQ_ADDR_MAX);
+        nAddr2 = validateInt(qasAddrs.last(), 10,
+                             REQ_ADDR_MIN, REQ_ADDR_MAX);
+        validateTrue(nAddr1 < nAddr2);
         break;
 
       default:
-        m_bValid = false;
+        validateTrue(false);
         break;
     }
 

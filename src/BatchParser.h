@@ -69,6 +69,11 @@ public:
   int end()   const { return m_nTextStart + m_nTextLen - 1; }
 
   bool valid() const { return m_bValid; }
+
+  /** Converts string to int and checks its range, updating the m_bValid state. */
+  int validateInt(const QString qStr, int nBase=10, int nMin=0, int nMax=-1);
+  /** Asserts given statement is true, updating the m_bValid state. */
+  bool validateTrue(bool bStatement);
 };
 
 //****************************************************************************//
