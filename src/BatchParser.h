@@ -30,6 +30,8 @@
 #include <QString>
 #include <QList>
 
+#include <climits>
+
 //****************************************************************************//
 
 namespace Batch {
@@ -57,6 +59,7 @@ protected:
   bool  m_bValid;
 
   static QString noWhitespace(const QString & qsStr);
+  static QString skipChar(const QString & qsStr, char c);
 
 public:
   CCommand(const QString & qsCommand, int nStart);
@@ -71,7 +74,10 @@ public:
   bool valid() const { return m_bValid; }
 
   /** Converts string to int and checks its range, updating the m_bValid state. */
-  int validateInt(const QString qStr, int nBase=10, int nMin=0, int nMax=-1);
+  int validateInt(const QString       & qsStr,
+                  int                   nBase = 10,
+                  int                   nMin = INT_MIN,
+                  int                   nMax = INT_MAX);
   /** Asserts given statement is true, updating the m_bValid state. */
   bool validateTrue(bool bStatement);
 };

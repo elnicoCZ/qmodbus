@@ -69,17 +69,14 @@ CCommand::~CCommand()
 
 //******************************************************************************
 
-int CCommand::validateInt(const QString qStr, int nBase, int nMin, int nMax)
+int CCommand::validateInt(const QString & qsStr, int nBase, int nMin, int nMax)
 {
   bool bSucc = true;
   int  ret;
 
-  ret = qStr.toInt(&bSucc, nBase);
+  ret = qsStr.toInt(&bSucc, nBase);
 
-  if (nMax >= nMin)
-  {
-    bSucc &= ((ret >= nMin) && (ret <= nMax));
-  }
+  bSucc &= ((ret >= nMin) && (ret <= nMax));
 
   m_bValid &= bSucc;
   return ret;
@@ -99,6 +96,15 @@ QString CCommand::noWhitespace(const QString & qsStr)
 {
   QString qsWorkStr(qsStr);
   return qsWorkStr.remove(QRegExp("\\s"));
+}
+
+//******************************************************************************
+
+QString CCommand::skipChar(const QString & qsStr, char c)
+{
+  int nPos = qsStr.indexOf(c) + 1;
+  // if the char was not found, we get (-1)+(1)=0 -> full string
+  return qsStr.mid(nPos);
 }
 
 //******************************************************************************
@@ -138,7 +144,7 @@ CDirective::CDirective(const QString & qsCommand, int nStart):
 CDelay::CDelay(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  m_nDuration = validateInt(qsCommand);
+  m_nDuration = validateInt(skipChar(qsCommand, STARTCHAR_DELAY), 10, 1);
 }
 
 //******************************************************************************
