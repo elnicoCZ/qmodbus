@@ -40,6 +40,7 @@ using namespace Batch;
 #define SEPARATOR_REQ_FUNC_DATA         ':'
 #define SEPARATOR_REQ_DATA_DATA         ','
 #define SEPARATOR_REQ_DATA_VAL          '='
+#define SEPARATOR_REQ_DATA_RANGE        '-'
 
 //******************************************************************************
 //******************************************************************************
@@ -140,14 +141,16 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
   {
     const QStringList qasAddrVal = qsData.split(SEPARATOR_REQ_DATA_VAL);
 
+    int nVal = 0;
     switch (oFuncType.eOperation)
     {
       case neFuncOperationRead:
-        m_bValid &= (qasAddrVal.count() == 1);
+        m_bValid &= (qasAddrVal.count() == 1);                          // ADDRS
         break;
 
       case neFuncOperationWrite:
-        m_bValid &= (qasAddrVal.count() == 2);
+        m_bValid &= (qasAddrVal.count() == 2);                          // ADDRS=VAL
+        nVal = qasAddrVal.last().toInt(&bSucc); m_bValid &= bSucc;
         break;
 
       default:
@@ -157,11 +160,32 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
     }
     if (!m_bValid) return;
 
-    m_qanAddrs.append(qasAddrVal.first().toInt(&bSucc)); m_bValid &= bSucc;
-    m_qanVals .append(qasAddrVal.last ().toInt(&bSucc)); m_bValid &= bSucc;
-    if (!m_bValid) return;
-  }
+    int nAddr1=0, nAddr2=0;
+    const QStringList qasAddrs = qasAddrVal.first().split(SEPARATOR_REQ_DATA_RANGE);
+    switch (qasAddrs.length())
+    {
+      case 1:                                                           // ADDR
+        nAddr1 = qasAddrs.first().toInt(&bSucc); m_bValid &= bSucc;
+        nAddr2 = nAddr1;
+        break;
 
+      case 2:                                                           // ADDR1-ADDR2
+        nAddr1 = qasAddrs.first().toInt(&bSucc); m_bValid &= bSucc;
+        nAddr2 = qasAddrs.last ().toInt(&bSucc); m_bValid &= bSucc;
+        m_bValid &= (nAddr1 < nAddr2);
+        break;
+
+      default:
+        m_bValid = false;
+        break;
+    }
+
+    for (int nAddr=nAddr1; nAddr<=nAddr2; ++nAddr)
+    {
+      m_qanAddrs.append(nAddr);
+      m_qanVals .append(nVal );
+    }
+  }
 }
 
 //******************************************************************************
