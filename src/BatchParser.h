@@ -134,6 +134,18 @@ public:
                    const QString & qsData);
 };
 
+class CDirectiveOutput : public CDirective
+{
+protected:
+  QString       m_qsPath;
+
+public:
+  const QString & path() const { return m_qsPath; }
+
+  CDirectiveOutput(const QString & qsCommand, int nStart,
+                   const QString & qsData);
+};
+
 //****************************************************************************//
 
 class CDelay : public CCommand
@@ -244,6 +256,8 @@ public:
 
   /** Retrieves the first PERIOD directive pointer or NULL. */
   const CDirectivePeriod * period() const;
+  /** Retrieves the first OUTPUT directive pointer or NULL. */
+  const CDirectiveOutput * output() const;
 
 signals:
   /** Emitted when the batch model changed. */

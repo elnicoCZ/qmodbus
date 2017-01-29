@@ -151,6 +151,10 @@ CDirective * CDirective::parse(const QString& qsCommand, int nStart)
   {
     return new CDirectivePeriod(qsCommand, nStart, qsData);
   }
+  else if ("OUTPUT" == qsName)
+  {
+    return new CDirectiveOutput(qsCommand, nStart, qsData);
+  }
   else
   {
     return new CDirectiveInvalid(qsCommand, nStart);
@@ -172,6 +176,15 @@ CDirectivePeriod::CDirectivePeriod(const QString & qsCommand, int nStart,
   CDirective(qsCommand, nStart)
 {
   m_nPeriod = validateInt(qsData, 10, 0);
+}
+
+//******************************************************************************
+
+CDirectiveOutput::CDirectiveOutput(const QString & qsCommand, int nStart,
+                                   const QString & qsData):
+  CDirective(qsCommand, nStart)
+{
+  m_qsPath = qsData.trimmed();
 }
 
 //******************************************************************************
@@ -489,6 +502,21 @@ const CDirectivePeriod * CBatch::period() const
   for (int i=0; i<m_qapoCommands.count(); ++i)
   {
     poDirective = dynamic_cast<const CDirectivePeriod *>(m_qapoCommands.at(i));
+    if (poDirective) return poDirective;
+  }
+
+  return NULL;
+}
+
+//******************************************************************************
+
+const CDirectiveOutput * CBatch::output() const
+{
+  const CDirectiveOutput * poDirective = NULL;
+
+  for (int i=0; i<m_qapoCommands.count(); ++i)
+  {
+    poDirective = dynamic_cast<const CDirectiveOutput *>(m_qapoCommands.at(i));
     if (poDirective) return poDirective;
   }
 

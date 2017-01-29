@@ -287,13 +287,22 @@ void BatchProcessor::highlightCommand(int nPos)
 
 void BatchProcessor::batchChanged()
 {
+  // @PERIOD
   const Batch::CDirectivePeriod * poPeriod = m_oBatch.period();
 
   ui->intervalSpinBox->setEnabled(poPeriod == NULL);
-
   if (poPeriod)
   {
     ui->intervalSpinBox->setValue(poPeriod->period());
+  }
+
+  // @OUTPUT
+  const Batch::CDirectiveOutput * poOutput = m_oBatch.output();
+
+  ui->outputFileEdit->setEnabled(poOutput == NULL);
+  if (poOutput)
+  {
+    ui->outputFileEdit->setText(poOutput->path());
   }
 }
 
