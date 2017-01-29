@@ -41,6 +41,7 @@ using namespace Batch;
 #define SEPARATOR_REQ_DATA_DATA         ','
 #define SEPARATOR_REQ_DATA_VAL          '='
 #define SEPARATOR_REQ_DATA_RANGE        '-'
+#define SEPARATOR_DIR_NAME_DATA         '='
 
 #define REQ_SLAVE_ID_MIN                (0)
 #define REQ_SLAVE_ID_MAX                (254)
@@ -134,7 +135,43 @@ CComment::CComment(const QString & qsCommand, int nStart):
 CDirective::CDirective(const QString & qsCommand, int nStart):
   CCommand(qsCommand, nStart)
 {
-  //
+  // nothing to do
+}
+
+//******************************************************************************
+
+CDirective * CDirective::parse(const QString& qsCommand, int nStart)
+{
+  const QString qsCommandSkipped = skipChar(qsCommand, STARTCHAR_DIRECTIVE);
+  const QString qsName = qsCommandSkipped.section(SEPARATOR_DIR_NAME_DATA, 0, 0)
+                          .trimmed();
+  const QString qsData = qsCommandSkipped.section(SEPARATOR_DIR_NAME_DATA, 1);
+
+  if ("PERIOD" == qsName)
+  {
+    return new CDirectivePeriod(qsCommand, nStart, qsData);
+  }
+  else
+  {
+    return new CDirectiveInvalid(qsCommand, nStart);
+  }
+}
+
+//******************************************************************************
+
+CDirectiveInvalid::CDirectiveInvalid(const QString & qsCommand, int nStart):
+  CDirective(qsCommand, nStart)
+{
+  validateTrue(false);
+}
+
+//******************************************************************************
+
+CDirectivePeriod::CDirectivePeriod(const QString & qsCommand, int nStart,
+                                   const QString & qsData):
+  CDirective(qsCommand, nStart)
+{
+  m_nPeriod = validateInt(qsData, 10, 0);
 }
 
 //******************************************************************************
@@ -353,7 +390,7 @@ void CBatch::create(const QString & qsBatch)
           break;
 
         case STARTCHAR_DIRECTIVE:
-          poCommand = new CDirective(qsCommand, nPos);
+          poCommand = CDirective::parse(qsCommand, nPos);
           break;
 
         case STARTCHAR_COMMENT:
@@ -371,6 +408,7 @@ void CBatch::create(const QString & qsBatch)
   }
 
   m_qsBatch = qsBatch;
+  emit changed();
 }
 
 //******************************************************************************
@@ -397,7 +435,7 @@ bool CBatch::isValid(void) const
 
 //******************************************************************************
 
-CCommand * CBatch::at(int nPos) const
+const CCommand * CBatch::at(int nPos) const
 {
   if ((nPos < 0) || (nPos >= m_qapoCommands.count())) return NULL;
   return m_qapoCommands.at(nPos);
@@ -440,6 +478,21 @@ void CBatch::stop(bool bForce)
 bool CBatch::isExecuting(void) const
 {
   return m_poProcessor->isRunning();
+}
+
+//******************************************************************************
+
+const CDirectivePeriod * CBatch::period() const
+{
+  const CDirectivePeriod * poDirective = NULL;
+
+  for (int i=0; i<m_qapoCommands.count(); ++i)
+  {
+    poDirective = dynamic_cast<const CDirectivePeriod *>(m_qapoCommands.at(i));
+    if (poDirective) return poDirective;
+  }
+
+  return NULL;
 }
 
 //******************************************************************************

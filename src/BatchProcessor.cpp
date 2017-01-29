@@ -62,7 +62,7 @@ void BatchHighlighter::highlightBlock(const QString & qsBlockText)
 
   for (int i=nIdxStart; i<=nIdxEnd; ++i)
   {
-    Batch::CCommand * poCommand = m_oBatch.at(i);
+    const Batch::CCommand * poCommand = m_oBatch.at(i);
     if (!poCommand)
     {
       // should not happen
@@ -123,6 +123,8 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
 
   connect(&m_oBatch, SIGNAL(execCommand     (int)),
           this     , SLOT  (highlightCommand(int)));
+  connect(&m_oBatch, SIGNAL(changed()),
+          this     , SLOT  (batchChanged()));
   connect(&m_oBatch, SIGNAL(execStart()),
           this     , SLOT  (execStart()));
   connect(&m_oBatch, SIGNAL(execStop(bool)),
@@ -279,6 +281,20 @@ void BatchProcessor::highlightCommand(int nPos)
 
   qaSelections.append(qSelection);
   ui->batchEdit->setExtraSelections(qaSelections);
+}
+
+//******************************************************************************
+
+void BatchProcessor::batchChanged()
+{
+  const Batch::CDirectivePeriod * poPeriod = m_oBatch.period();
+
+  ui->intervalSpinBox->setEnabled(poPeriod == NULL);
+
+  if (poPeriod)
+  {
+    ui->intervalSpinBox->setValue(poPeriod->period());
+  }
 }
 
 //******************************************************************************

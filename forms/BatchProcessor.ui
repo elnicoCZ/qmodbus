@@ -31,8 +31,8 @@
        <property name="toolTip">
         <string>Use 0 for single-shot execution.</string>
        </property>
-       <property name="minimum">
-        <number>0</number>
+       <property name="maximum">
+        <number>9999999</number>
        </property>
       </widget>
      </item>

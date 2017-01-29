@@ -106,10 +106,32 @@ public:
 
 class CDirective : public CCommand
 {
-public:
+protected:
   CDirective(const QString & qsCommand, int nStart);
 
+public:
   virtual ECommandType type() const { return neCommandDirective; }
+
+  /** Creates a directive object of respective subtype. */
+  static CDirective * parse(const QString & qsCommand, int nStart);
+};
+
+class CDirectiveInvalid : public CDirective
+{
+public:
+  CDirectiveInvalid(const QString & qsCommand, int nStart);
+};
+
+class CDirectivePeriod : public CDirective
+{
+protected:
+  int           m_nPeriod;
+
+public:
+  int period() const { return m_nPeriod; }
+
+  CDirectivePeriod(const QString & qsCommand, int nStart,
+                   const QString & qsData);
 };
 
 //****************************************************************************//
@@ -200,6 +222,7 @@ public:
 
   /** Rebuilds the batch model if the string differs from the current batch. */
   void rebuild(const QString & qsBatch);
+
   /** Executes the batch. */
   void exec(void) const;
   /** Initiates stopping the execution.
@@ -209,12 +232,23 @@ public:
   /** Checkes whether the batch is currently being executed. */
   bool isExecuting(void) const;
 
+  /** Retrieves the number of all commands in the batch. */
   int count(void) const { return m_qapoCommands.count(); }
+  /** Checks for validity of all batch commands. */
   bool isValid(void) const;
-  CCommand * at(int nPos) const;
+  /** Retrieves pointer to the command at given position, NULL on failure. */
+  const CCommand * at(int nPos) const;
+  /** Retrieves index of command at given character position in the text,
+   *  or the last command preceding given character position. */
   int commandIndex(int nCharPos) const;
 
+  /** Retrieves the first PERIOD directive pointer or NULL. */
+  const CDirectivePeriod * period() const;
+
 signals:
+  /** Emitted when the batch model changed. */
+  void changed() const;
+
   /** Execution started. */
   void execStart() const;
   /** Execution complete. */

@@ -86,6 +86,7 @@ private slots:
   void batchMenuTriggered(QAction * qAction);
   void runBatch();
   void highlightCommand(int nPos);
+  void batchChanged();
   /** */
   void execStart();
   /** */
