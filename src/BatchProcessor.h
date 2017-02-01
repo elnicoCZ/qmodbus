@@ -67,7 +67,7 @@ private:
   void setControlsEnabled(bool bEnable);
 
   /** */
-  void logOpen(const QString & sFilename);
+  bool logOpen(const QString & sFilename);
   /** */
   void logWrite(const QString & qStr);
   /** */
@@ -82,6 +82,7 @@ private slots:
   void start();
   void stop(bool bForce = false);
   void browseOutputFile();
+  void updateOutputFile();
   void browseBatchFile();
   void batchMenuTriggered(QAction * qAction);
   void runBatch();
@@ -108,6 +109,7 @@ private:
   QTimer m_timer;
   QDir  m_oInputDir;
   QMenu m_oInputMenu;
+  QString m_qsOutputFile;
   QFile m_oOutputFile;
   BatchHighlighter * m_poBatchHighlighter;
   Batch::CBatch m_oBatch;

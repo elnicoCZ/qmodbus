@@ -61,8 +61,8 @@
      </item>
      <item row="3" column="1" colspan="3">
       <widget class="QLineEdit" name="outputFileEdit">
-       <property name="toolTip">
-        <string>If empty, the output is only logged below.</string>
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Path to the file where the output is logged in the &lt;span style=&quot; font-style:italic;&quot;&gt;csv&lt;/span&gt; format.&lt;/p&gt;&lt;p&gt;If &lt;span style=&quot; font-weight:600;&quot;&gt;empty&lt;/span&gt;, the output is only logged in the widget below. Otherwise, the path can be either &lt;span style=&quot; font-weight:600;&quot;&gt;relative&lt;/span&gt; with respect to this program working directory, or &lt;span style=&quot; font-weight:600;&quot;&gt;absolute&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;Multiple built-in variables can be used in the path:&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;$INPUTDIR&lt;/span&gt; - Path to the directory of the input batch file (&lt;span style=&quot; font-style:italic;&quot;&gt;qmb&lt;/span&gt;).&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;$DATE&lt;/span&gt; - Current date in format &lt;span style=&quot; font-style:italic;&quot;&gt;YYYYMMDD&lt;/span&gt;.&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;$TIME&lt;/span&gt; - Current time in format &lt;span style=&quot; font-style:italic;&quot;&gt;HHMMSS&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;The widget's tooltip shows an example of the absolute path to which the input evaluates. Actual path is evaluated at the time of pressing the &lt;span style=&quot; font-style:italic;&quot;&gt;Start&lt;/span&gt; button, as it may change due to use of the &lt;span style=&quot; font-style:italic;&quot;&gt;$TIME&lt;/span&gt; variable.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -202,8 +202,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>541</x>
-     <y>218</y>
+     <x>539</x>
+     <y>229</y>
     </hint>
     <hint type="destinationlabel">
      <x>208</x>
@@ -218,8 +218,8 @@
    <slot>browseOutputFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>541</x>
-     <y>188</y>
+     <x>519</x>
+     <y>190</y>
     </hint>
     <hint type="destinationlabel">
      <x>505</x>
@@ -234,8 +234,8 @@
    <slot>start()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>239</x>
-     <y>218</y>
+     <x>225</x>
+     <y>229</y>
     </hint>
     <hint type="destinationlabel">
      <x>67</x>
@@ -275,11 +275,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>outputFileEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>BatchProcessor</receiver>
+   <slot>updateOutputFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>385</x>
+     <y>173</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>386</x>
+     <y>218</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>start()</slot>
   <slot>stop()</slot>
   <slot>browseOutputFile()</slot>
   <slot>browseBatchFile()</slot>
+  <slot>updateOutputFile()</slot>
  </slots>
 </ui>

@@ -118,6 +118,8 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
   connect(&m_oInputMenu, SIGNAL(triggered         (QAction*)),
           this         , SLOT  (batchMenuTriggered(QAction*)));
 
+  updateOutputFile();
+
   m_poBatchHighlighter = new BatchHighlighter(ui->batchEdit->document(),
                                               m_oBatch);
 
@@ -154,10 +156,11 @@ void BatchProcessor::start()
     return;
   }
 
-  setControlsEnabled(false);
-
   logClose();
-  logOpen(ui->outputFileEdit->text());
+  updateOutputFile();
+  if (!logOpen(m_qsOutputFile)) return;
+
+  setControlsEnabled(false);
 
   int iPeriod = ui->intervalSpinBox->value();
   if (iPeriod > 0)
@@ -193,14 +196,46 @@ void BatchProcessor::stop(bool bForce)
 
 void BatchProcessor::browseOutputFile()
 {
-  QString fileName = QFileDialog::getSaveFileName(this,
-                                                  tr("Get output file"),
-                                                  QString(),
-                                                  tr("CSV files (*.csv)"));
-  if (!fileName.isEmpty())
+  QString qsFilename =
+      QFileDialog::getSaveFileName(this,
+                                   tr("Get output file"),
+                                   QString(),
+                                   tr("CSV files (*.csv)"),
+                                   NULL,
+                                   QFileDialog::DontConfirmOverwrite);
+  if (!qsFilename.isEmpty())
   {
-    ui->outputFileEdit->setText(fileName);
+    ui->outputFileEdit->setText(qsFilename);
   }
+}
+
+//******************************************************************************
+
+void BatchProcessor::updateOutputFile()
+{
+  QString qsTooltip;
+
+  m_qsOutputFile = ui->outputFileEdit->text();
+
+  if (m_qsOutputFile.isEmpty())
+  {
+    qsTooltip = "If empty, the output is only logged below.";
+  }
+  else
+  {
+    // replace wildcards
+    QDateTime qDate = QDateTime::currentDateTime();
+    m_qsOutputFile.replace("$DATE", qDate.toString("yyyyMMdd"));
+    m_qsOutputFile.replace("$TIME", qDate.toString("hhmmss"));
+    m_qsOutputFile.replace("$INPUTDIR", m_oInputDir.absolutePath());
+
+    // convert to absolute path
+    m_qsOutputFile = QFileInfo(m_qsOutputFile).absoluteFilePath();
+    qsTooltip = m_qsOutputFile;
+  }
+
+  // show the result in the tooltip
+  ui->outputFileEdit->setToolTip(qsTooltip + "<p>See the context help for details.</p>");
 }
 
 //******************************************************************************
@@ -300,6 +335,7 @@ void BatchProcessor::batchChanged()
   const Batch::CDirectiveOutput * poOutput = m_oBatch.output();
 
   ui->outputFileEdit->setEnabled(poOutput == NULL);
+  ui->openOutputFileButton->setEnabled(poOutput == NULL);
   if (poOutput)
   {
     ui->outputFileEdit->setText(poOutput->path());
@@ -470,20 +506,41 @@ QString BatchProcessor::sendModbusRequest(int iSlaveID,
 
 //******************************************************************************
 
-void BatchProcessor::logOpen(const QString & sFilename)
+bool BatchProcessor::logOpen(const QString & sFilename)
 {
   ui->txtLog->clear();
 
-  if (sFilename.isEmpty()) return;
+  if (sFilename.isEmpty()) return true;
 
   m_oOutputFile.setFileName(sFilename);
-  if(!m_oOutputFile.open(QFile::WriteOnly | QFile::Truncate))
+
+  QIODevice::OpenMode qeMode = QFile::Append;
+  if (m_oOutputFile.exists())
+  {
+    QMessageBox::StandardButton qeResult =
+      QMessageBox::question(
+        this,
+        tr("File exists"),
+        tr("File %1 already exists. Overwrite?\nPress \"Yes\" to overwrite, \"No\" to append.")
+          .arg(m_oOutputFile.fileName()),
+        (QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel),
+        QMessageBox::No
+      );
+    if (QMessageBox::Cancel == qeResult) return false;
+    if (QMessageBox::Yes    == qeResult) qeMode = QFile::Truncate;
+  }
+
+  if(!m_oOutputFile.open(QFile::WriteOnly | qeMode))
   {
     QMessageBox::critical(this,
                           tr("Could not open file"),
                           tr("Could not open output file %1 for writing.")
                             .arg(m_oOutputFile.fileName()));
+    return false;
   }
+
+  ui->txtLog->appendPlainText("Logging to " + m_oOutputFile.fileName() + "\n");
+  return true;
 }
 
 //******************************************************************************
