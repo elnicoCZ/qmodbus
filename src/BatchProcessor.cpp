@@ -235,7 +235,9 @@ void BatchProcessor::updateOutputFile()
   }
 
   // show the result in the tooltip
-  ui->outputFileEdit->setToolTip(qsTooltip + "<p>See the context help for details.</p>");
+  ui->outputFileEdit->setToolTip(
+    qsTooltip + "<p>See the context help for details (<b>Shift+F1</b>).</p>"
+  );
 }
 
 //******************************************************************************
@@ -521,8 +523,9 @@ bool BatchProcessor::logOpen(const QString & sFilename)
       QMessageBox::question(
         this,
         tr("File exists"),
-        tr("File %1 already exists. Overwrite?\nPress \"Yes\" to overwrite, \"No\" to append.")
-          .arg(m_oOutputFile.fileName()),
+        tr("File %1 already exists. Overwrite?\n"
+           "Press \"Yes\" to overwrite, \"No\" to append.")
+            .arg(m_oOutputFile.fileName()),
         (QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel),
         QMessageBox::No
       );
