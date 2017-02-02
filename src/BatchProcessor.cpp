@@ -253,6 +253,30 @@ void BatchProcessor::browseBatchFile()
 
 //******************************************************************************
 
+void BatchProcessor::saveBatchFile()
+{
+  QString sFilename = QFileDialog::getSaveFileName(this,
+                                                   tr("Save batch file"),
+                                                   QString(),
+                                                   tr("QModBus Batch (*.qmb)"));
+  if (sFilename.isEmpty()) return;
+
+  QFile qFile(sFilename);
+  if (!qFile.open(QIODevice::WriteOnly))
+  {
+    QMessageBox::warning(this,
+                         tr("Could not open file"),
+                         tr("Could not open batch file %1 for writing.")
+                            .arg(sFilename));
+    return;
+  }
+
+  QTextStream qStream(&qFile);
+  qStream << ui->batchEdit->toPlainText();
+}
+
+//******************************************************************************
+
 bool BatchProcessor::loadBatchFile(const QString & sFilename)
 {
   if (sFilename.isEmpty()) return false;
@@ -263,7 +287,7 @@ bool BatchProcessor::loadBatchFile(const QString & sFilename)
     QMessageBox::warning(this,
                          tr("Could not open file"),
                          tr("Could not open batch file %1 for reading.")
-                            .arg(m_oOutputFile.fileName()));
+                            .arg(sFilename));
     return false;
   }
 

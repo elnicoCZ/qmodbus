@@ -84,6 +84,7 @@ private slots:
   void browseOutputFile();
   void updateOutputFile();
   void browseBatchFile();
+  void saveBatchFile();
   void batchMenuTriggered(QAction * qAction);
   void runBatch();
   void highlightCommand(int nPos);
