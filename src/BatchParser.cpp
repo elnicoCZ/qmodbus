@@ -272,10 +272,22 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
         break;
     }
 
-    for (int nAddr=nAddr1; nAddr<=nAddr2; ++nAddr)
+    if (neFuncScopeMultiple == oFuncType.eScope)
     {
-      m_qanAddrs.append(nAddr);
-      m_qanVals .append(nVal );
+      // MULTIPLE: Add the item only once, with corresponding Cnts value
+      m_qanAddrs.append(nAddr1         );
+      m_qanCnts .append(nAddr2-nAddr1+1);
+      m_qanVals .append(nVal           );
+    }
+    else
+    {
+      // SINGLE: Add the item as many times as needed to cover the whole range
+      for (int nAddr=nAddr1; nAddr<=nAddr2; ++nAddr)
+      {
+        m_qanAddrs.append(nAddr);
+        m_qanCnts .append(1    );
+        m_qanVals .append(nVal );
+      }
     }
   }
 }
@@ -564,7 +576,8 @@ void CBatchProc::run()
           emit m_poBatch->execRequest(poRequest->slaveId(),
                                       poRequest->funcId(),
                                       poRequest->addrs()[j],
-                                      poRequest->vals()[j]);
+                                      poRequest->vals ()[j],
+                                      poRequest->cnts ()[j]);
         }
         break;
       }

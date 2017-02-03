@@ -131,8 +131,8 @@ BatchProcessor::BatchProcessor(QWidget *parent, modbus_t *modbus) :
           this     , SLOT  (execStart()));
   connect(&m_oBatch, SIGNAL(execStop(bool)),
           this     , SLOT  (execStop(bool)));
-  connect(&m_oBatch, SIGNAL(execRequest(int,int,int,int)),
-          this     , SLOT  (execRequest(int,int,int,int)));
+  connect(&m_oBatch, SIGNAL(execRequest(int,int,int,int,int)),
+          this     , SLOT  (execRequest(int,int,int,int,int)));
 }
 
 //******************************************************************************
@@ -391,143 +391,143 @@ void BatchProcessor::execStop(bool bFinished)
 void BatchProcessor::execRequest(int            iSlaveId,
                                  int            iFuncId,
                                  int            iAddr,
-                                 int            iVal)
+                                 int            iVal,
+                                 int            iNum)
 {
-  QString qStr;
-  QTextStream qStrStream(&qStr);
+  QString qStrCommon =
+      QString("%1, %2, 0x%3, ")
+        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"))
+        .arg(iSlaveId)
+        .arg(QString::number(iFuncId, 16).toUpper());
 
-  qStrStream << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") << ", "
-             << iSlaveId << ", "
-             << "0x" << QString::number(iFuncId, 16).toUpper() << ", "
-             << iAddr << ", "
-             << sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal);
+  try {
+    QVector<uint16_t> qau16Result =
+        sendModbusRequest(iSlaveId, iFuncId, iAddr, iVal, iNum);
 
-  logWrite(qStr);
+    foreach (uint16_t u16Val, qau16Result)
+    {
+      logWrite(qStrCommon + QString::number(iAddr++) + ", " + QString::number(u16Val));
+    }
+
+  } catch (const QString & qsErr) {
+    logWrite(qStrCommon + QString::number(iAddr) + ", " + qsErr);
+  }
 }
 
 //******************************************************************************
 
-QString BatchProcessor::sendModbusRequest(int iSlaveID,
-                                          int iFuncId,
-                                          int iAddr,
-                                          int iVal)
+QVector<uint16_t> BatchProcessor::sendModbusRequest(int iSlaveID,
+                                                    int iFuncId,
+                                                    int iAddr,
+                                                    int iVal,
+                                                    int iNum)
 {
-  if (m_modbus == NULL)
+  if ((m_modbus == NULL) || (iNum < 1))
   {
-    return QString();
+    return QVector<uint16_t>();
   }
 
-  const int num = 1;
-  uint8_t dest[num*sizeof(uint16_t)];
-  uint16_t * dest16 = (uint16_t *) dest;
+  QVector<uint16_t>   qau16Result(iNum);
 
-  memset(dest, 0, sizeof(dest));
-
-  int ret = -1;
-  bool is16Bit = false;
+  uint16_t * au16Data = qau16Result.data();
+  uint8_t  * au8Data  = (uint8_t*)au16Data;
+  bool       b8Bit    = false;
+  int        ret      = -1;
 
   modbus_set_slave(m_modbus, iSlaveID);
 
   switch (iFuncId)
   {
     case MODBUS_FC_READ_COILS:
-      ret = modbus_read_bits(m_modbus, iAddr, num, dest);
+      ret = modbus_read_bits(m_modbus, iAddr, iNum, au8Data);
+      b8Bit = true;
       break;
 
     case MODBUS_FC_READ_DISCRETE_INPUTS:
-      ret = modbus_read_input_bits(m_modbus, iAddr, num, dest);
+      ret = modbus_read_input_bits(m_modbus, iAddr, iNum, au8Data);
+      b8Bit = true;
       break;
 
     case MODBUS_FC_READ_HOLDING_REGISTERS:
-      ret = modbus_read_registers(m_modbus, iAddr, num, dest16);
-      is16Bit = true;
+      ret = modbus_read_registers(m_modbus, iAddr, iNum, au16Data);
       break;
 
     case MODBUS_FC_READ_INPUT_REGISTERS:
-      ret = modbus_read_input_registers(m_modbus, iAddr, num, dest16);
-      is16Bit = true;
+      ret = modbus_read_input_registers(m_modbus, iAddr, iNum, au16Data);
       break;
 
     case MODBUS_FC_WRITE_SINGLE_COIL:
       ret = modbus_write_bit(m_modbus, iAddr, iVal);
+      au16Data[0] = iVal;
       break;
 
     case MODBUS_FC_WRITE_SINGLE_REGISTER:
       ret = modbus_write_register(m_modbus, iAddr, iVal);
+      au16Data[0] = iVal;
       break;
 
     case MODBUS_FC_WRITE_MULTIPLE_COILS:
     {
-      uint8_t * au8Data = new uint8_t[num];
-      for (int i = 0; i < num; ++i)
+      for (int i = 0; i < iNum; ++i)
       {
         au8Data[i] = iVal;
       }
-      ret = modbus_write_bits(m_modbus, iAddr, num, au8Data);
-      delete[] au8Data;
+      b8Bit = true;
+      ret = modbus_write_bits(m_modbus, iAddr, iNum, au8Data);
       break;
     }
 
     case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
     {
-      uint16_t * au16Data = new uint16_t[num];
-      for (int i = 0; i < num; ++i)
+      for (int i = 0; i < iNum; ++i)
       {
         au16Data[i] = iVal;
       }
-      ret = modbus_write_registers(m_modbus, iAddr, num, au16Data);
-      delete[] au16Data;
+      ret = modbus_write_registers(m_modbus, iAddr, iNum, au16Data);
       break;
     }
 
     default:
       // should not happen, as we validate the batch prior to execution
-      QMessageBox::warning(this, tr("Unimplemented function code"),
-                           tr("Function code %1 not implemented").arg(iFuncId));
+      throw tr("-1 (Function code %1 not implemented").arg(iFuncId);
       break;
   }
 
-  if (ret == num)
+  if (ret == iNum)
   {
-    bool b_hex = false;//is16Bit && ui->checkBoxHexData->checkState() == Qt::Checked;
-    QString qs_num;
-
-    for( int i = 0; i < num; ++i )
+    if (b8Bit)
     {
-      int data = is16Bit ? dest16[i] : dest[i];
-
-      qs_num += QString().sprintf( b_hex ? "0x%04x" : "%d", data);
+      // convert the 8bit array to 16bit array (from the back!)
+      for (int i = iNum-1; i >= 0; --i)
+      {
+        au16Data[i] = au8Data[i];
+      }
     }
 
-    return qs_num;
+    return qau16Result;
   }
-  else
+
+  else if (ret < 0)
   {
-    if (ret < 0)
-    {
-      if (
+    if ((errno == EIO) ||
 #ifdef WIN32
-          errno == WSAETIMEDOUT ||
+        (errno == WSAETIMEDOUT) ||
 #endif
-          errno == EIO
-                                  )
-      {
-        return tr("-1 (I/O error: did not receive any data from slave.)");
-      }
-      else
-      {
-        return tr("-1 (Slave threw exception \"%1\" or function not implemented.)")
-                  .arg(modbus_strerror(errno));
-      }
+        (0))
+    {
+      throw tr("-1 (I/O error: did not receive any data from slave.)");
     }
     else
     {
-      return tr("-1 (Number of registers returned does not match "
-                "number of registers requested!)");
+      throw tr("-1 (Slave threw exception \"%1\" or function not implemented.)")
+                .arg(modbus_strerror(errno));
     }
   }
-
-  return "-1 (NO VALID DATA RECEIVED)";
+  else
+  {
+    throw tr("-1 (Number of registers returned does not match "
+             "number of registers requested!)");
+  }
 }
 
 //******************************************************************************

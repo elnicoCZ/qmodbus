@@ -203,6 +203,7 @@ protected:
   int         m_nFuncId;
   QList<int>  m_qanAddrs;
   QList<int>  m_qanVals;
+  QList<int>  m_qanCnts;
 
 public:
   CRequest(const QString & qsCommand, int nStart);
@@ -213,6 +214,7 @@ public:
   int funcId () const { return m_nFuncId ; }
   const QList<int> & addrs() const { return m_qanAddrs; }
   const QList<int> & vals () const { return m_qanVals ; }
+  const QList<int> & cnts () const { return m_qanCnts ; }
 };
 
 //****************************************************************************//
@@ -271,7 +273,7 @@ signals:
   void execCommand(int nPos) const;
 
   /** Request command handler. */
-  void execRequest(int nSlaveId, int nFuncId, int nAddr, int nVal) const;
+  void execRequest(int nSlaveId, int nFuncId, int nAddr, int nVal, int nNum) const;
 
 private:
   void free(void);

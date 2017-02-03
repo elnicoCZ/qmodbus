@@ -28,7 +28,7 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/qmodbus.rc.in ${CMAKE_BINARY_DIR}/qmodbus.rc)
 
 # set compiler flags
 SET(CMAKE_C_FLAGS "-O2 -g -Wall ${CMAKE_C_FLAGS}")
-SET(CMAKE_CXX_FLAGS "-O2 -g -fno-exceptions -Wall ${CMAKE_CXX_FLAGS}")
+SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
 SET(qmodbus_SOURCES src/main.cpp
     src/mainwindow.cpp

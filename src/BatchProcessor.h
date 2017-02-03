@@ -97,13 +97,15 @@ private slots:
   void execRequest(int            iSlaveId,
                    int            iFuncId,
                    int            iAddr,
-                   int            iVal);
+                   int            iVal,
+                   int            iNum);
 
 private:
-  QString sendModbusRequest(int iSlaveID,
-                            int iFuncId,
-                            int iAddr,
-                            int iVal);
+  QVector<uint16_t> sendModbusRequest(int iSlaveID,
+                                      int iFuncId,
+                                      int iAddr,
+                                      int iVal,
+                                      int iNum);
 
   Ui::BatchProcessor *ui;
   modbus_t *m_modbus;
