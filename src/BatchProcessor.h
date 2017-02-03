@@ -26,17 +26,32 @@
 #ifndef _BATCH_PROCESSOR_H
 #define _BATCH_PROCESSOR_H
 
+#include <QDir>
 #include <QFile>
 #include <QTimer>
 #include <QDialog>
+#include <QMenu>
+#include <QTextDocument>
+#include <QSyntaxHighlighter>
 
+#include "BatchParser.h"
 #include "modbus.h"
-
 
 namespace Ui
 {
   class BatchProcessor;
 } ;
+
+class BatchHighlighter : public QSyntaxHighlighter
+{
+public:
+  BatchHighlighter(QTextDocument * parent, Batch::CBatch & oBatch);
+
+protected:
+  Batch::CBatch   & m_oBatch;
+
+  virtual void highlightBlock(const QString & qsBlockText);
+};
 
 class BatchProcessor : public QDialog
 {
@@ -46,53 +61,64 @@ public:
   ~BatchProcessor();
 
 private:
-  typedef enum EFuncType_
-  {
-    neFuncTypeRead,
-    neFuncTypeWrite,
-    neFuncTypeInvalid
-  } EFuncType;
-
   /** */
   bool validateBatch();
   /** */
-  bool processBatch(const QString & qBatch, bool bExecute);
-  /** */
-  void execRequest(int            iSlaveId,
-                   int            iFuncId,
-                   int            iAddr,
-                   int            iVal);
-  /** */
-  static EFuncType getFuncType(int iFuncId);
+  void setControlsEnabled(bool bEnable);
 
   /** */
-  void logOpen(const QString & sFilename);
+  bool logOpen(const QString & sFilename);
   /** */
   void logWrite(const QString & qStr);
   /** */
   void logClose(void);
 
+  /** */
+  bool loadBatchFile(const QString & sFilename);
+  /** */
+  void updateBatchFileMenu(const QString & sPath = "");
+
 private slots:
   void start();
-  void stop();
+  void stop(bool bForce = false);
   void browseOutputFile();
+  void updateOutputFile();
+  void browseBatchFile();
+  void saveBatchFile();
+  void batchMenuTriggered(QAction * qAction);
   void runBatch();
+  void highlightCommand(int nPos);
+  void batchChanged();
+  /** */
+  void execStart();
+  /** */
+  void execStop(bool bFinished);
+  /** */
+  void execRequest(int            iSlaveId,
+                   int            iFuncId,
+                   int            iAddr,
+                   int            iVal,
+                   int            iNum);
 
 private:
-  QString sendModbusRequest(int iSlaveID,
-                            int iFuncId,
-                            int iAddr,
-                            int iVal);
+  QVector<uint16_t> sendModbusRequest(int iSlaveID,
+                                      int iFuncId,
+                                      int iAddr,
+                                      int iVal,
+                                      int iNum);
 
   Ui::BatchProcessor *ui;
   modbus_t *m_modbus;
   QTimer m_timer;
-  QFile m_outputFile;
+  QDir  m_oInputDir;
+  QMenu m_oInputMenu;
+  QString m_qsOutputFile;
+  QFile m_oOutputFile;
+  BatchHighlighter * m_poBatchHighlighter;
+  Batch::CBatch m_oBatch;
+  bool m_bStopAfterExecution;
 
 } ;
-
-
-
 
 
 #endif // MAINWINDOW_H
