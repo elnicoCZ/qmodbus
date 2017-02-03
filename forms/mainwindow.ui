@@ -98,6 +98,9 @@
            <property name="text">
             <string>Send</string>
            </property>
+           <property name="icon">
+            <iconset theme="mail-reply-sender"/>
+           </property>
           </widget>
          </item>
          <item row="0" column="0">
@@ -310,6 +313,9 @@
          <property name="text">
           <string>Clear</string>
          </property>
+         <property name="icon">
+          <iconset theme="edit-clear"/>
+         </property>
         </widget>
        </item>
        <item row="1" column="0" colspan="4">
@@ -394,6 +400,9 @@
         <widget class="QPushButton" name="clearBusMonTable">
          <property name="text">
           <string>Clear</string>
+         </property>
+         <property name="icon">
+          <iconset theme="edit-clear"/>
          </property>
         </widget>
        </item>
@@ -481,16 +490,25 @@
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionQuit">
+   <property name="icon">
+    <iconset theme="process-stop"/>
+   </property>
    <property name="text">
     <string>Quit</string>
    </property>
   </action>
   <action name="actionAbout_QModBus">
+   <property name="icon">
+    <iconset theme="help-browser"/>
+   </property>
    <property name="text">
     <string>About QModBus</string>
    </property>
   </action>
   <action name="actionBatchProcessing">
+   <property name="icon">
+    <iconset theme="utilities-terminal"/>
+   </property>
    <property name="text">
     <string>Batch processing</string>
    </property>

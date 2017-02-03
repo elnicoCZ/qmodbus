@@ -88,6 +88,7 @@ SET(qmodbus_UI forms/mainwindow.ui
 QT4_WRAP_CPP(qmodbus_MOC_out ${qmodbus_INCLUDES})
 QT4_WRAP_UI(qmodbus_UIC_out ${qmodbus_UI})
 QT4_ADD_RESOURCES(qmodbus_RCC_out data/qmodbus.qrc)
+QT4_ADD_RESOURCES(qmodbus_RCC_out data/icons/tango/tango.qrc)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libmodbus/src ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qextserialport ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src)
 LINK_LIBRARIES(${QT_LIBRARIES})

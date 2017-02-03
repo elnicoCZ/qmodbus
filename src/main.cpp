@@ -30,16 +30,20 @@ MainWindow * globalMainWin = NULL;
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
+  QApplication a(argc, argv);
 
-	QApplication::setOrganizationName( "EDC Electronic Design Chemnitz GmbH" );
-	QApplication::setOrganizationDomain( "ed-chemnitz.de" );
-	QApplication::setApplicationName( "QModBus" );
+  QApplication::setOrganizationName( "EDC Electronic Design Chemnitz GmbH" );
+  QApplication::setOrganizationDomain( "ed-chemnitz.de" );
+  QApplication::setApplicationName( "QModBus" );
 
-	MainWindow w;
-	w.show();
+  // use our custom theme (tango.qrc) instead of the system one
+  // (the system theme works under Linux only)
+  QIcon::setThemeName("tango");
 
-	globalMainWin = &w;
+  MainWindow w;
+  w.show();
 
-	return a.exec();
+  globalMainWin = &w;
+
+  return a.exec();
 }

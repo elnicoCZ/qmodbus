@@ -180,6 +180,9 @@
        <property name="text">
         <string>Start</string>
        </property>
+       <property name="icon">
+        <iconset theme="media-playback-start"/>
+       </property>
       </widget>
      </item>
      <item>
@@ -189,6 +192,9 @@
        </property>
        <property name="text">
         <string>Stop</string>
+       </property>
+       <property name="icon">
+        <iconset theme="media-playback-stop"/>
        </property>
       </widget>
      </item>
@@ -209,6 +215,9 @@
       <widget class="QPushButton" name="closeButton">
        <property name="text">
         <string>Close</string>
+       </property>
+       <property name="icon">
+        <iconset theme="process-stop"/>
        </property>
       </widget>
      </item>
