@@ -104,8 +104,8 @@ private:
   QVector<uint16_t> sendModbusRequest(int iSlaveID,
                                       int iFuncId,
                                       int iAddr,
-                                      int iVal,
-                                      int iNum);
+                                      int iNum,
+                                      int iParam);
 
   Ui::BatchProcessor *ui;
   modbus_t *m_modbus;

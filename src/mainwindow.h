@@ -78,6 +78,7 @@ private slots:
     void clearBusMonTable( void );
     void updateRequestPreview( void );
     void updateRegisterView( void );
+    void updateFileItem( void );
     void enableHexView( void );
     void sendModbusRequest( void );
     void resetStatus( void );
@@ -85,7 +86,6 @@ private slots:
     void openBatchProcessor();
     void aboutQModBus( void );
     void onRtuPortActive(bool active);
-    void onAsciiPortActive(bool active);
     void onTcpPortActive(bool active);
 
 private:

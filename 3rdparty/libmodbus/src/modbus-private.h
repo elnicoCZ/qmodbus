@@ -1,19 +1,7 @@
 /*
  * Copyright © 2010-2012 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * SPDX-License-Identifier: LGPL-2.1+
  */
 
 #ifndef MODBUS_PRIVATE_H
@@ -53,8 +41,7 @@ MODBUS_BEGIN_DECLS
 
 typedef enum {
     _MODBUS_BACKEND_TYPE_RTU=0,
-    _MODBUS_BACKEND_TYPE_TCP, 
-    _MODBUS_BACKEND_TYPE_ASCII
+    _MODBUS_BACKEND_TYPE_TCP
 } modbus_backend_type_t;
 
 /*
@@ -85,6 +72,8 @@ typedef struct _modbus_backend {
     int (*set_slave) (modbus_t *ctx, int slave);
     int (*build_request_basis) (modbus_t *ctx, int function, int addr,
                                 int nb, uint8_t *req);
+    int (*build_file_request_basis) (modbus_t *ctx, int function, int file_num,
+                                     int record_num, int record_len, uint8_t *req);
     int (*build_response_basis) (sft_t *sft, uint8_t *rsp);
     int (*prepare_response_tid) (const uint8_t *req, int *req_length);
     int (*send_msg_pre) (uint8_t *req, int req_length);
@@ -111,8 +100,8 @@ struct _modbus {
     int error_recovery;
     struct timeval response_timeout;
     struct timeval byte_timeout;
-	uint16_t last_crc_expected;
-	uint16_t last_crc_received;
+    uint16_t last_crc_expected;
+    uint16_t last_crc_received;
     const modbus_backend_t *backend;
     void *backend_data;
     modbus_monitor_add_item_fnc_t monitor_add_item;

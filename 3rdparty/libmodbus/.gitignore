@@ -3,6 +3,8 @@
 *.o
 *.la
 *.lo
+*.log
+*.trs
 .deps
 .libs
 GPATH
@@ -17,13 +19,13 @@ Makefile.in
 /build-aux
 /config.*
 /configure
+/configure.scan
 /depcomp
 /install-sh
 /libtool
 /ltmain.sh
 /missing
 /libmodbus.pc
-/libmodbus.spec
 /stamp-h1
 /*.sublime-*
 src/modbus-version.h
@@ -41,12 +43,3 @@ tests/stamp-h2
 doc/*.html
 doc/*.3
 doc/*.7
-debian/*.log
-debian/*.debhelper
-debian/*.substvars
-debian/files
-debian/libmodbus-dev/
-debian/libmodbus5/
-debian/stamp-*
-debian/tmp/
-debian/libmodbus-dbg/

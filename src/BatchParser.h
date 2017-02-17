@@ -179,7 +179,8 @@ protected:
     neFuncSubjectCoil,
     neFuncSubjectHoldingReg,
     neFuncSubjectInputReg,
-    neFuncSubjectDiscreteInput
+    neFuncSubjectDiscreteInput,
+    neFuncSubjectFileRecord,
   } EFuncSubject;
 
   typedef enum EFuncScope_
@@ -202,8 +203,8 @@ protected:
   int         m_nSlaveId;
   int         m_nFuncId;
   QList<int>  m_qanAddrs;
-  QList<int>  m_qanVals;
   QList<int>  m_qanCnts;
+  QList<int>  m_qanParams;    // file IDs or values
 
 public:
   CRequest(const QString & qsCommand, int nStart);
@@ -212,9 +213,9 @@ public:
 
   int slaveId() const { return m_nSlaveId; }
   int funcId () const { return m_nFuncId ; }
-  const QList<int> & addrs() const { return m_qanAddrs; }
-  const QList<int> & vals () const { return m_qanVals ; }
-  const QList<int> & cnts () const { return m_qanCnts ; }
+  const QList<int> & addrs () const { return m_qanAddrs ; }
+  const QList<int> & cnts  () const { return m_qanCnts  ; }
+  const QList<int> & params() const { return m_qanParams; }
 };
 
 //****************************************************************************//

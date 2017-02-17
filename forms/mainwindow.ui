@@ -52,16 +52,6 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="tab_3">
-         <attribute name="title">
-          <string>Modbus ASCII</string>
-         </attribute>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="AsciiSettingsWidget" name="asciiSettingsWidget" native="true"/>
-          </item>
-         </layout>
-        </widget>
        </widget>
       </item>
       <item>
@@ -76,6 +66,50 @@
          <string>ModBus Request</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
+         <item row="1" column="5">
+          <widget class="QSpinBox" name="numCoils">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>65535</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QCheckBox" name="checkBoxHexData">
+           <property name="toolTip">
+            <string>Display hex data</string>
+           </property>
+           <property name="text">
+            <string>Hex data</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Function code</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QLabel" name="lblNum">
+           <property name="text">
+            <string>Num of coils</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QSpinBox" name="startAddr">
+           <property name="maximum">
+            <number>65535</number>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QSpinBox" name="slaveID">
            <property name="minimum">
@@ -86,27 +120,55 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="3">
-          <widget class="QLabel" name="label_9">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>Num of coils</string>
+            <string>Slave ID</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="3">
+         <item row="2" column="5">
           <widget class="QPushButton" name="sendBtn">
            <property name="text">
             <string>Send</string>
            </property>
            <property name="icon">
-            <iconset theme="mail-reply-sender"/>
+            <iconset theme="mail-reply-sender">
+             <normaloff/>
+            </iconset>
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Slave ID</string>
+         <item row="2" column="0" colspan="2">
+          <widget class="QTextEdit" name="requestPreview">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>300</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Courier</family>
+            </font>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="undoRedoEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
            </property>
           </widget>
          </item>
@@ -152,79 +214,37 @@
              <string>Write Multiple Registers (0x10)</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>Read File Record (0x14)</string>
+            </property>
+           </item>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_8">
+         <item row="0" column="3">
+          <widget class="QLabel" name="lblAddr">
            <property name="text">
             <string>Start address</string>
            </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QSpinBox" name="numCoils">
-           <property name="minimum">
-            <number>1</number>
-           </property>
-           <property name="maximum">
-            <number>65535</number>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Function code</string>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QSpinBox" name="startAddr">
+          <widget class="QSpinBox" name="file">
            <property name="maximum">
             <number>65535</number>
            </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
-          <widget class="QTextEdit" name="requestPreview">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>300</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>Courier</family>
-            </font>
-           </property>
-           <property name="verticalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOff</enum>
-           </property>
-           <property name="horizontalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOff</enum>
-           </property>
-           <property name="undoRedoEnabled">
-            <bool>false</bool>
-           </property>
-           <property name="textInteractionFlags">
-            <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QCheckBox" name="checkBoxHexData">
-           <property name="toolTip">
-            <string>Display hex data</string>
-           </property>
+         <item row="0" column="2">
+          <widget class="QLabel" name="lblFile">
            <property name="text">
-            <string>Hex data</string>
+            <string>File</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -314,7 +334,9 @@
           <string>Clear</string>
          </property>
          <property name="icon">
-          <iconset theme="edit-clear"/>
+          <iconset theme="edit-clear">
+           <normaloff/>
+          </iconset>
          </property>
         </widget>
        </item>
@@ -402,7 +424,9 @@
           <string>Clear</string>
          </property>
          <property name="icon">
-          <iconset theme="edit-clear"/>
+          <iconset theme="edit-clear">
+           <normaloff/>
+          </iconset>
          </property>
         </widget>
        </item>
@@ -491,7 +515,9 @@
   </widget>
   <action name="actionQuit">
    <property name="icon">
-    <iconset theme="process-stop"/>
+    <iconset theme="process-stop">
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Quit</string>
@@ -499,7 +525,9 @@
   </action>
   <action name="actionAbout_QModBus">
    <property name="icon">
-    <iconset theme="help-browser"/>
+    <iconset theme="help-browser">
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>About QModBus</string>
@@ -507,7 +535,9 @@
   </action>
   <action name="actionBatchProcessing">
    <property name="icon">
-    <iconset theme="utilities-terminal"/>
+    <iconset theme="utilities-terminal">
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Batch processing</string>
@@ -528,13 +558,23 @@
    <header>tcpipsettingswidget.h</header>
    <container>1</container>
   </customwidget>
-  <customwidget>
-   <class>AsciiSettingsWidget</class>
-   <extends>QWidget</extends>
-   <header>asciisettingswidget.h</header>
-   <container>1</container>
-  </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>slaveID</tabstop>
+  <tabstop>functionCode</tabstop>
+  <tabstop>file</tabstop>
+  <tabstop>startAddr</tabstop>
+  <tabstop>numCoils</tabstop>
+  <tabstop>checkBoxHexData</tabstop>
+  <tabstop>sendBtn</tabstop>
+  <tabstop>requestPreview</tabstop>
+  <tabstop>regTable</tabstop>
+  <tabstop>clearBusRawData</tabstop>
+  <tabstop>rawData</tabstop>
+  <tabstop>clearBusMonTable</tabstop>
+  <tabstop>busMonTable</tabstop>
+ </tabstops>
  <resources>
   <include location="../data/qmodbus.qrc"/>
  </resources>

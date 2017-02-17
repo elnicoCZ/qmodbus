@@ -1,4 +1,74 @@
-libmodbus 3.1.2 (2014-XX-XX)
+libmodbus 3.1.4 (2016-05-28)
+============================
+
+- C_PROG_RANLIB is rendered obsolete by LT_INIT
+- Improve ifdef around bswap_16 for __CYGWIN__
+- Improve Cygwin support. Thanks to StalderT.
+- Another round of DRY in modbus_reply()
+- Rename raw_rep to raw_rsp in unit-test-client
+- Fix wrong function name in debug message
+- Fix handling of invalid function code (closes #315)
+- Add debug message on unknown function and new unit test
+- DRY in modbus_reply by improving response_exception()
+- Fix typo in 3053bd0adb
+- CID 69145 - Argument cannot be negative in unit-test-server
+- CID 69142 - Unchecked return value in unit-test-server
+- Fix CID 69140 - Bad bit shift operation (coverity) in tests
+- Rewrite and rename README as README.md in tests/
+- Github's contributing and issue template files
+- Fix small leak (64 bytes in TCP) in unit-test-client
+- Add unit-tests.sh to tarball
+- Add ./configure.scan to .gitignore
+- Move setting of option inside the relevant conditional group
+- Add links to new modbus_*_float_* functions in index
+- Slight change to modbus_report_slave_id doc.
+
+libmodbus 3.1.3 (2016-05-11)
+============================
+
+- New bswap macros for Max OSX by Jakob Bysewski.
+- Fix "wildcard address" in TCP IPv6 by Shoichi Sakane.
+- Introduce offsets in modbus mappings with modbus_mapping_new_start_address.
+  Thanks to Michael Heimpold and Stéphane Raimbault.
+- Fix address range in random-test-client.
+  Thanks to Martin Galvan.
+- Add an option to disable tests compilation by Yegor Yefremov.
+- Define MSG_DONTWAIT to MSG_NONBLOCK on AIX (#294).
+  Thanks to Fabrice Cantos.
+- Fix building when byteswap.h is not defined by Tomasz Mon.
+- Add some more macros for data manipulation and documentation.
+- Remove duplicate install of modbus.h (closes #290).
+  Thanks to Daniel Sutcliffe.
+- Move MIGRATION and README.md to dist_doc_DATA target.
+- Change order of few functions in modbus RTU code.
+- Add entries for modbus_rtu_[get|set]_delay in documentation index.
+- Implemented runtime configurable RTS delay by Jimmy Bergström.
+- Add an entry in libmodbus index page for modbus_rtu_set_custom_rts.
+- Add support for user defined RTS toggle function by Jimmy
+  Bergström.
+- Added ILLEGAL_DATA_ADDRESS tests for modbus_write_register[|s].
+  Thanks to Andrey Skvortsov.
+- Update documentation of modbus_rtu_set_rts
+- Fix rts signal switch time by Hiromasa Ihara.
+- Improve new_rtu and set_slave documentation (related to #276).
+- Fix late check of ctx in modbus_reply[|_exception] (closes #269).
+- Wait the server for 1 second before running tests (help Travis).
+- A libmodbus context isn't thread safe and won't be (closes #246).
+- Fix buffer overflow in modbus_mask_write_register (#265).
+- Minor adjustments to README about AsciiDoc.
+- Export MODBUS_MAX_ADU_LENGTH and documentation (ref #241).
+- Explicit check against Modbus broadcast address.
+- Do not reply on broadcast requests (fixes #153). Thanks to Michael.
+- Add Travis support.
+- Run unit tests with standard: make check (closes #205, closes #238).
+  This patch has been developed by Andrey Skvortsov, Michael Heimpold
+  and Stéphane Raimbault.
+- modbus_send_raw_request: limit request length (fixes #207).
+  Thanks to Hanno Neuer for spotting this security flaw.
+- Add new contributors to AUTHORS
+- Introduce SPDX license identifiers. Thanks to Michael Heimpold.
+
+libmodbus 3.1.2 (2015-02-13)
 ============================
 
 If you still want to listen any addresses in your TCP IPv4 server, you must now
@@ -10,6 +80,27 @@ This release introduces API changes on modbus_get_byte_timeout,
 modbus_get_response_timeout, modbus_set_byte_timeout,
 modbus_set_response_timeout to ease writing of language bindings.
 
+- Rewrite documentation building system
+- Fix timeouts in unit tests
+- Don't flush on illegal address errors in single write functions
+- Fix compilation on compilers not supporting c99 mode.
+  Thanks to Michael Heimpold.
+- Update license for the tests in Debian packaging (#221)
+- Move check of device earlier to avoid a free call
+- Unit test for baud rate check and error message.
+- Fix crash modbus_new_rtu when baud is 0.
+  Thank you to Daniel Schürmann.
+- Removed function prototype without implementation
+  Thank you Andrej Skvortzov.
+- Switch test programs to a BSD license
+- Fix remote buffer overflow vulnerability on write requests
+- Avoid twice connect() in source code (closes #194)
+- Fix compilation with MinGW (GCC 4.8.1) under Win7 (closes #163)
+  Thank you MarjanTomas and SwissKnife.
+- Fix TCP IPv4 modbus_connect() on win32 (closes #100 and #165)
+  Thank you Petr Gladkiy and Marjan Tomas.
+- Fix 24a05ebd3c0 - win32: init of modbus_tcp_pi_listen (#187)
+- INADDR_* macros are defined in host byte order
 - Filter of IP addresses in IPv4 server (closes #190)
 - Allow to listen any hosts in IPv6 (closes #32)
 - Define and public export of MODBUS_MAX_PDU_LENGTH (closes #167)
@@ -87,7 +178,6 @@ sequences. Windows support still broken.
 - More compilation fixes for Windows by oldfaber.
 - Fix wrong constant names to create version number.
   Thanks to Denis Davydov.
-
 
 libmodbus 3.1.0 (2012-06-22)
 ============================

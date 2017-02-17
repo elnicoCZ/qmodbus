@@ -40,11 +40,14 @@ using namespace Batch;
 #define SEPARATOR_REQ_FUNC_DATA         ':'
 #define SEPARATOR_REQ_DATA_DATA         ','
 #define SEPARATOR_REQ_DATA_VAL          '='
+#define SEPARATOR_REQ_DATA_FILE         '/'
 #define SEPARATOR_REQ_DATA_RANGE        '-'
 #define SEPARATOR_DIR_NAME_DATA         '='
 
 #define REQ_SLAVE_ID_MIN                (0)
 #define REQ_SLAVE_ID_MAX                (254)
+#define REQ_FILE_MIN                    (0)
+#define REQ_FILE_MAX                    (65535)
 #define REQ_ADDR_MIN                    (0)
 #define REQ_ADDR_MAX                    (65535)
 #define REQ_VAL_MIN                     (0)
@@ -227,19 +230,30 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
 
   foreach (const QString & qsData, qasData)
   {
-    const QStringList qasAddrVal = qsData.split(SEPARATOR_REQ_DATA_VAL);
+    QString         qsAddrsVal  = qsData;                               // ADDRS, FILE/ADDRS or ADDRS=VAL
+    int             nParam      = 0;                                    // either File ID or Val
 
-    int nVal = 0;
+    if (neFuncSubjectFileRecord == oFuncType.eSubject)
+    {
+      const QStringList qasFileAddrs = qsData.split(SEPARATOR_REQ_DATA_FILE);
+      validateTrue(qasFileAddrs.count() == 2);                          // FILE/ADDRS
+      nParam      = validateInt(qasFileAddrs.first(), 10,
+                                REQ_FILE_MIN, REQ_FILE_MAX);
+      qsAddrsVal = qasFileAddrs.last();
+    }
+
+    const QStringList qasAddrsVal = qsAddrsVal.split(SEPARATOR_REQ_DATA_VAL);
+
     switch (oFuncType.eOperation)
     {
       case neFuncOperationRead:
-        validateTrue(qasAddrVal.count() == 1);                          // ADDRS
+        validateTrue(qasAddrsVal.count() == 1);                         // ADDRS
         break;
 
       case neFuncOperationWrite:
-        validateTrue(qasAddrVal.count() == 2);                          // ADDRS=VAL
-        nVal = validateInt(qasAddrVal.last(), 10,
-                           REQ_VAL_MIN, REQ_VAL_MAX);
+        validateTrue(qasAddrsVal.count() == 2);                         // ADDRS=VAL
+        nParam = validateInt(qasAddrsVal.last(), 10,
+                             REQ_VAL_MIN, REQ_VAL_MAX);
         break;
 
       default:
@@ -250,7 +264,7 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
     if (!valid()) return;
 
     int nAddr1=0, nAddr2=0;
-    const QStringList qasAddrs = qasAddrVal.first().split(SEPARATOR_REQ_DATA_RANGE);
+    const QStringList qasAddrs = qasAddrsVal.first().split(SEPARATOR_REQ_DATA_RANGE);
     switch (qasAddrs.length())
     {
       case 1:                                                           // ADDR
@@ -275,18 +289,18 @@ CRequest::CRequest(const QString & qsCommand, int nStart):
     if (neFuncScopeMultiple == oFuncType.eScope)
     {
       // MULTIPLE: Add the item only once, with corresponding Cnts value
-      m_qanAddrs.append(nAddr1         );
-      m_qanCnts .append(nAddr2-nAddr1+1);
-      m_qanVals .append(nVal           );
+      m_qanAddrs .append(nAddr1         );
+      m_qanCnts  .append(nAddr2-nAddr1+1);
+      m_qanParams.append(nParam         );
     }
     else
     {
       // SINGLE: Add the item as many times as needed to cover the whole range
       for (int nAddr=nAddr1; nAddr<=nAddr2; ++nAddr)
       {
-        m_qanAddrs.append(nAddr);
-        m_qanCnts .append(1    );
-        m_qanVals .append(nVal );
+        m_qanAddrs .append(nAddr );
+        m_qanCnts  .append(1     );
+        m_qanParams.append(nParam);
       }
     }
   }
@@ -309,6 +323,7 @@ CRequest::TFuncType CRequest::getFuncType(int nFuncId)
     case MODBUS_FC_READ_DISCRETE_INPUTS:
     case MODBUS_FC_READ_HOLDING_REGISTERS:
     case MODBUS_FC_READ_INPUT_REGISTERS:
+    case MODBUS_FC_READ_FILE_RECORD:
       oType.eOperation = neFuncOperationRead;
       break;
 
@@ -338,6 +353,10 @@ CRequest::TFuncType CRequest::getFuncType(int nFuncId)
 
     case MODBUS_FC_READ_INPUT_REGISTERS:
       oType.eSubject = neFuncSubjectInputReg;
+      break;
+
+    case MODBUS_FC_READ_FILE_RECORD:
+      oType.eSubject = neFuncSubjectFileRecord;
       break;
 
     default:
@@ -575,9 +594,9 @@ void CBatchProc::run()
         {
           emit m_poBatch->execRequest(poRequest->slaveId(),
                                       poRequest->funcId(),
-                                      poRequest->addrs()[j],
-                                      poRequest->vals ()[j],
-                                      poRequest->cnts ()[j]);
+                                      poRequest->addrs ()[j],
+                                      poRequest->cnts  ()[j],
+                                      poRequest->params()[j]);
         }
         break;
       }

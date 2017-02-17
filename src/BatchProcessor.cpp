@@ -419,8 +419,8 @@ void BatchProcessor::execRequest(int            iSlaveId,
 QVector<uint16_t> BatchProcessor::sendModbusRequest(int iSlaveID,
                                                     int iFuncId,
                                                     int iAddr,
-                                                    int iVal,
-                                                    int iNum)
+                                                    int iNum,
+                                                    int iParam)
 {
   if ((m_modbus == NULL) || (iNum < 1))
   {
@@ -456,21 +456,25 @@ QVector<uint16_t> BatchProcessor::sendModbusRequest(int iSlaveID,
       ret = modbus_read_input_registers(m_modbus, iAddr, iNum, au16Data);
       break;
 
+    case MODBUS_FC_READ_FILE_RECORD:
+      ret = modbus_read_file_record(m_modbus, iParam, iAddr, iNum, au16Data);
+      break;
+
     case MODBUS_FC_WRITE_SINGLE_COIL:
-      ret = modbus_write_bit(m_modbus, iAddr, iVal);
-      au16Data[0] = iVal;
+      ret = modbus_write_bit(m_modbus, iAddr, iParam);
+      au16Data[0] = iParam;
       break;
 
     case MODBUS_FC_WRITE_SINGLE_REGISTER:
-      ret = modbus_write_register(m_modbus, iAddr, iVal);
-      au16Data[0] = iVal;
+      ret = modbus_write_register(m_modbus, iAddr, iParam);
+      au16Data[0] = iParam;
       break;
 
     case MODBUS_FC_WRITE_MULTIPLE_COILS:
     {
       for (int i = 0; i < iNum; ++i)
       {
-        au8Data[i] = iVal;
+        au8Data[i] = iParam;
       }
       b8Bit = true;
       ret = modbus_write_bits(m_modbus, iAddr, iNum, au8Data);
@@ -481,7 +485,7 @@ QVector<uint16_t> BatchProcessor::sendModbusRequest(int iSlaveID,
     {
       for (int i = 0; i < iNum; ++i)
       {
-        au16Data[i] = iVal;
+        au16Data[i] = iParam;
       }
       ret = modbus_write_registers(m_modbus, iAddr, iNum, au16Data);
       break;

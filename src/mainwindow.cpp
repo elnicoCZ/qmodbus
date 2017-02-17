@@ -53,7 +53,6 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	ui->setupUi(this);
 
 	connect( ui->rtuSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onRtuPortActive(bool)));
-    connect( ui->asciiSettingsWidget, SIGNAL(serialPortActive(bool)), this , SLOT(onAsciiPortActive(bool)));
 	connect( ui->tcpSettingsWidget,   SIGNAL(tcpPortActive(bool)), this, SLOT(onTcpPortActive(bool)));
 	connect( ui->slaveID, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRequestPreview() ) );
@@ -70,6 +69,9 @@ MainWindow::MainWindow( QWidget * _parent ) :
 			this, SLOT( updateRegisterView() ) );
 	connect( ui->startAddr, SIGNAL( valueChanged( int ) ),
 			this, SLOT( updateRegisterView() ) );
+	
+	connect( ui->functionCode, SIGNAL( currentIndexChanged( int ) ),
+            this, SLOT( updateFileItem() ) );
 
 	connect( ui->sendBtn, SIGNAL( clicked() ),
 			this, SLOT( sendModbusRequest() ) );
@@ -87,6 +89,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	updateRegisterView();
 	updateRequestPreview();
 	enableHexView();
+    updateFileItem();
 
 	ui->regTable->setColumnWidth( 0, 150 );
 
@@ -221,6 +224,8 @@ static QString descriptiveDataTypeName( int funcCode )
 			return "Holding Register (16 bit)";
 		case MODBUS_FC_READ_INPUT_REGISTERS:
 			return "Input Register (16 bit)";
+		case MODBUS_FC_READ_FILE_RECORD:
+			return "File record";
 		default:
 			break;
 	}
@@ -277,6 +282,27 @@ void MainWindow::updateRequestPreview( void )
 }
 
 
+void MainWindow::updateFileItem( void )
+{
+	const int func = stringToHex( embracedString( ui->functionCode->currentText() ) );
+
+	if( func == MODBUS_FC_READ_FILE_RECORD )
+	{
+        ui->file->show();
+        ui->lblFile->show();
+
+        ui->lblAddr->setText("Record");
+		ui->lblNum->setText("Record length");
+	}
+	else
+	{
+        ui->file->hide();
+        ui->lblFile->hide();
+
+		ui->lblAddr->setText("Start address");
+		ui->lblNum->setText("Num of coils");
+	}
+}
 
 
 void MainWindow::updateRegisterView( void )
@@ -388,7 +414,13 @@ void MainWindow::sendModbusRequest( void )
 			writeAccess = true;
 			num = 1;
 			break;
-
+		case MODBUS_FC_READ_FILE_RECORD:
+		{
+            int file = ui->file->value();
+            ret = modbus_read_file_record( m_modbus, file, addr, num, dest16 );
+			is16Bit = true;
+			break;
+		}
 		case MODBUS_FC_WRITE_MULTIPLE_COILS:
 		{
 			uint8_t * data = new uint8_t[num];
@@ -533,20 +565,6 @@ void MainWindow::onRtuPortActive(bool active)
 	else {
 		m_modbus = NULL;
 	}
-}
-
-void MainWindow::onAsciiPortActive(bool active)
-{
-    if (active) {
-        m_modbus = ui->asciiSettingsWidget->modbus();
-        if (m_modbus) {
-            modbus_register_monitor_add_item_fnc(m_modbus, MainWindow::stBusMonitorAddItem);
-            modbus_register_monitor_raw_data_fnc(m_modbus, MainWindow::stBusMonitorRawData);
-        }
-    }
-    else {
-        m_modbus = NULL;
-    }
 }
 
 void MainWindow::onTcpPortActive(bool active)

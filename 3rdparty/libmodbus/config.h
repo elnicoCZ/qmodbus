@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the `accept4' function. */
-//#define HAVE_ACCEPT4 1
+#define HAVE_ACCEPT4 1
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
@@ -12,11 +12,11 @@
 
 /* Define to 1 if you have the declaration of `TIOCM_RTS', and to 0 if you
    don't. */
-//#define HAVE_DECL_TIOCM_RTS 1
+#define HAVE_DECL_TIOCM_RTS 1
 
 /* Define to 1 if you have the declaration of `TIOCSRS485', and to 0 if you
    don't. */
-//#define HAVE_DECL_TIOCSRS485 1
+#define HAVE_DECL_TIOCSRS485 1
 
 /* Define to 1 if you have the declaration of `__CYGWIN__', and to 0 if you
    don't. */
@@ -51,6 +51,10 @@
 
 /* Define to 1 if you have the <linux/serial.h> header file. */
 #define HAVE_LINUX_SERIAL_H 1
+
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
+#define HAVE_MALLOC 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -93,6 +97,9 @@
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #define HAVE_SYS_IOCTL_H 1
+
+/* Define to 1 if you have the <sys/params.h> header file. */
+/* #undef HAVE_SYS_PARAMS_H */
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #define HAVE_SYS_SOCKET_H 1
@@ -144,7 +151,7 @@
 #define PACKAGE_NAME "libmodbus"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libmodbus 3.1.1"
+#define PACKAGE_STRING "libmodbus 3.1.4"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libmodbus"
@@ -153,7 +160,7 @@
 #define PACKAGE_URL "http://libmodbus.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "3.1.1"
+#define PACKAGE_VERSION "3.1.4"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -181,10 +188,15 @@
 
 
 /* Version number of package */
-#define VERSION "3.1.1"
+#define VERSION "3.1.4"
 
 /* _ */
-//#define WINVER 0x0501
+#define WINVER 0x0501
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
@@ -202,8 +214,49 @@
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 /* #undef _POSIX_SOURCE */
 
+/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+/* #undef _UINT32_T */
+
+/* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+/* #undef _UINT8_T */
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+/* #undef inline */
+#endif
+
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+/* #undef int64_t */
+
+/* Define to rpl_malloc if the replacement function should be used. */
+/* #undef malloc */
+
 /* Define to `int' if <sys/types.h> does not define. */
 /* #undef pid_t */
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* #undef size_t */
+
+/* Define to `int' if <sys/types.h> does not define. */
+/* #undef ssize_t */
+
+/* Define to the type of an unsigned integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+/* #undef uint16_t */
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+/* #undef uint32_t */
+
+/* Define to the type of an unsigned integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+/* #undef uint8_t */
 
 /* Define as `fork' if `vfork' does not work. */
 /* #undef vfork */

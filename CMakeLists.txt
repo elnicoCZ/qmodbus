@@ -35,7 +35,6 @@ SET(qmodbus_SOURCES src/main.cpp
     src/BatchProcessor.cpp
     src/BatchParser.cpp
     src/serialsettingswidget.cpp
-    src/asciisettingswidget.cpp
     src/rtusettingswidget.cpp
     src/tcpipsettingswidget.cpp
     src/ipaddressctrl.cpp
@@ -45,7 +44,6 @@ SET(qmodbus_SOURCES src/main.cpp
     3rdparty/libmodbus/src/modbus-data.c
     3rdparty/libmodbus/src/modbus-rtu.c
     3rdparty/libmodbus/src/modbus-tcp.c
-    3rdparty/libmodbus/src/modbus-ascii.c
 )
 
 SET(qmodbus_INCLUDES src/mainwindow.h
